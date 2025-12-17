@@ -519,67 +519,87 @@
             },
 
             generatePath() {
-                // 迷宮式垂直路徑：修正重疊問題，欄位數減少，間距拉大
+                // 迷宮式垂直路徑：加大間距，增加段數至滿版，新增不相鄰蛇行區
                 const w = ui.els.canvas.width;
                 const h = ui.els.canvas.height;
                 
                 this.path2D = new Path2D();
                 STATE.pathPoints = [];
                 
-                // 設定更大的邊界與更少的欄位以確保空間
-                const marginX = 80; 
-                const marginY = 120;
+                // 設定最小安全邊界
+                const marginX = Math.max(36, CONFIG.pathWidth * 1.25);
+                const marginY = Math.max(48, CONFIG.pathWidth * 1.5);
                 
                 const startX = marginX;
                 const endX = w - marginX;
-                const yTop = marginY;
-                const yBottom = h - marginY;
-                const hPath = yBottom - yTop;
+                const yTopLimit = marginY;
+                const yBottomLimit = h - marginY;
+                const hPath = yBottomLimit - yTopLimit;
 
-                // 欄位數減少至 5，確保每欄之間有足夠空隙
-                const columns = 5;
+                // 設定最小欄距，動態決定 columns 數量
+                const minStepX = CONFIG.pathWidth * 2.35;
+                let columns = Math.floor((endX - startX) / minStepX) + 1;
+                // 限制欄位數在 5~8 之間，讓畫面看起來更滿
+                columns = Math.min(8, Math.max(5, columns));
                 const stepX = (endX - startX) / (columns - 1);
 
-                // 設定不規則垂直高度 (0.0~1.0)
-                const yTargets = [
-                  0.15, // Col 0 (Up)
-                  0.85, // Col 1 (Down)
-                  0.2,  // Col 2 (Up, 這裡會加 wiggle)
-                  0.8,  // Col 3 (Down)
-                  0.0   // Col 4 (End Top Right)
+                // 設定兩段不相鄰的蛇行欄位
+                const wiggleCol1 = Math.floor(columns / 2);
+                let wiggleCol2 = 1;
+                if (Math.abs(wiggleCol2 - wiggleCol1) < 2) {
+                    wiggleCol2 = columns - 2;
+                }
+                
+                // 蛇行幅度受 stepX 限制，確保不黏合
+                const wiggleAmp = Math.min(stepX * 0.18, CONFIG.pathWidth * 0.55);
+                const wiggleAmp2 = wiggleAmp * 0.8;
+
+                // 定義交錯長短的高度節奏 (0.0~1.0)
+                const ranges = [
+                    [0.12, 0.20], // 靠頂
+                    [0.80, 0.90], // 靠底
+                    [0.25, 0.38], // 中上
+                    [0.60, 0.75]  // 中下
                 ];
+                
+                const yTargets = [];
+                for (let i = 0; i < columns - 1; i++) {
+                    const range = ranges[i % ranges.length];
+                    // 在範圍內隨機取值以增加多樣性
+                    const val = range[0] + Math.random() * (range[1] - range[0]);
+                    yTargets.push(val);
+                }
+                yTargets.push(0.0); // 確保終點在右上最頂端
 
                 let rawPoints = [];
-                rawPoints.push({x: startX, y: yBottom}); // 起點
+                rawPoints.push({x: startX, y: yBottomLimit}); // 起點左下
 
                 for (let i = 0; i < columns; i++) {
                     const x = startX + i * stepX;
-                    const y = yTop + yTargets[i] * hPath;
+                    const targetY = yTopLimit + yTargets[i] * hPath;
+                    
+                    const lastPoint = rawPoints[rawPoints.length - 1];
+                    const startY = (i === 0) ? yBottomLimit : lastPoint.y;
 
-                    // 1. 垂直主路徑點
-                    // 如果是 Wiggle 欄位 (中間 index 2)，加入水平蛇行
-                    if (i === 2) {
-                        const wiggleYStart = rawPoints[rawPoints.length - 1].y;
-                        const wiggleYEnd = y;
-                        const wiggleCount = 5;
-                        const wiggleStepY = (wiggleYEnd - wiggleYStart) / wiggleCount;
-                        // 蛇行幅度受控，不超過 stepX 的 25%
-                        const wiggleAmp = stepX * 0.25; 
+                    // 1. 垂直主路徑與蛇行區處理
+                    if (i === wiggleCol1 || i === wiggleCol2) {
+                        const count = (i === wiggleCol1) ? 3 : 2; // 蛇行次數 2~3 次
+                        const stepY = (targetY - startY) / count;
+                        const currentAmp = (i === wiggleCol1) ? wiggleAmp : wiggleAmp2;
                         
-                        for (let k = 1; k < wiggleCount; k++) {
-                            const dir = (k % 2 === 0) ? 1 : -1;
-                            const wy = wiggleYStart + k * wiggleStepY;
-                            rawPoints.push({x: x + dir * wiggleAmp, y: wy});
+                        for (let k = 1; k < count; k++) {
+                            const dir = (k % 2 === 1) ? 1 : -1;
+                            rawPoints.push({x: x + dir * currentAmp, y: startY + k * stepY});
                         }
                     }
                     
-                    // 加入垂直段的終點
-                    rawPoints.push({x: x, y: y});
+                    // 加入垂直段終點
+                    rawPoints.push({x: x, y: targetY});
 
                     // 2. 水平過渡到下一欄
                     if (i < columns - 1) {
                         const nextX = startX + (i + 1) * stepX;
-                        rawPoints.push({x: nextX, y: y});
+                        rawPoints.push({x: nextX, y: targetY});
                     }
                 }
 
