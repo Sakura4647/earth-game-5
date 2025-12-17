@@ -519,59 +519,84 @@
             },
 
             generatePath() {
-                // Deterministic Vertical Maze Path (Snake-like Vertical flow)
-                // Start: Bottom-Left, End: Top-Right
+                // 迷宮式垂直路徑：修正重疊問題，欄位數減少，間距拉大
                 const w = ui.els.canvas.width;
                 const h = ui.els.canvas.height;
                 
                 this.path2D = new Path2D();
                 STATE.pathPoints = [];
                 
-                const marginX = 45; 
+                // 設定更大的邊界與更少的欄位以確保空間
+                const marginX = 80; 
                 const marginY = 120;
                 
                 const startX = marginX;
                 const endX = w - marginX;
                 const yTop = marginY;
                 const yBottom = h - marginY;
-                
-                // Deterministic columns (odd number ensures we end at Top-Right)
-                const columns = 7; 
+                const hPath = yBottom - yTop;
+
+                // 欄位數減少至 5，確保每欄之間有足夠空隙
+                const columns = 5;
                 const stepX = (endX - startX) / (columns - 1);
-                
-                let points = [];
-                // Initialize start point explicitly at bottom-left
-                points.push({x: startX, y: yBottom});
-                
+
+                // 設定不規則垂直高度 (0.0~1.0)
+                const yTargets = [
+                  0.15, // Col 0 (Up)
+                  0.85, // Col 1 (Down)
+                  0.2,  // Col 2 (Up, 這裡會加 wiggle)
+                  0.8,  // Col 3 (Down)
+                  0.0   // Col 4 (End Top Right)
+                ];
+
+                let rawPoints = [];
+                rawPoints.push({x: startX, y: yBottom}); // 起點
+
                 for (let i = 0; i < columns; i++) {
                     const x = startX + i * stepX;
-                    const targetY = (i % 2 === 0) ? yTop : yBottom;
+                    const y = yTop + yTargets[i] * hPath;
+
+                    // 1. 垂直主路徑點
+                    // 如果是 Wiggle 欄位 (中間 index 2)，加入水平蛇行
+                    if (i === 2) {
+                        const wiggleYStart = rawPoints[rawPoints.length - 1].y;
+                        const wiggleYEnd = y;
+                        const wiggleCount = 5;
+                        const wiggleStepY = (wiggleYEnd - wiggleYStart) / wiggleCount;
+                        // 蛇行幅度受控，不超過 stepX 的 25%
+                        const wiggleAmp = stepX * 0.25; 
+                        
+                        for (let k = 1; k < wiggleCount; k++) {
+                            const dir = (k % 2 === 0) ? 1 : -1;
+                            const wy = wiggleYStart + k * wiggleStepY;
+                            rawPoints.push({x: x + dir * wiggleAmp, y: wy});
+                        }
+                    }
                     
-                    // Vertical segment in current column
-                    points.push({x: x, y: targetY});
-                    
-                    // Horizontal shift to next column
+                    // 加入垂直段的終點
+                    rawPoints.push({x: x, y: y});
+
+                    // 2. 水平過渡到下一欄
                     if (i < columns - 1) {
-                        points.push({x: x + stepX, y: targetY});
+                        const nextX = startX + (i + 1) * stepX;
+                        rawPoints.push({x: nextX, y: y});
                     }
                 }
-                
-                // Draw path and populate sampling points
-                if (points.length > 0) {
-                    this.path2D.moveTo(points[0].x, points[0].y);
-                    STATE.pathPoints.push({x: points[0].x, y: points[0].y, len: 0});
+
+                // 畫路徑並進行高密度取樣
+                if (rawPoints.length > 0) {
+                    this.path2D.moveTo(rawPoints[0].x, rawPoints[0].y);
+                    STATE.pathPoints.push({x: rawPoints[0].x, y: rawPoints[0].y, len: 0});
                     
                     let cLen = 0;
-                    
-                    for (let i = 1; i < points.length; i++) {
-                        const p1 = points[i-1];
-                        const p2 = points[i];
+                    for (let i = 1; i < rawPoints.length; i++) {
+                        const p1 = rawPoints[i-1];
+                        const p2 = rawPoints[i];
                         
                         this.path2D.lineTo(p2.x, p2.y);
                         
-                        // Interpolate points for accurate progress tracking and collision sampling
                         const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-                        const steps = Math.max(1, Math.ceil(dist / 4)); // Density: approx every 4px
+                        const steps = Math.max(1, Math.ceil(dist / 4)); 
                         
                         for (let s = 1; s <= steps; s++) {
                             const t = s / steps;
@@ -595,17 +620,17 @@
                 this.ctx.lineCap = 'round';
                 this.ctx.lineJoin = 'round';
 
-                // 1. Draw Border (The "Wall") - darker soil color
+                // 1. Draw Border (The "Wall") - 較深土色
                 this.ctx.strokeStyle = '#a37e4d'; // wood-600
                 this.ctx.lineWidth = CONFIG.pathWidth;
                 this.ctx.stroke(this.path2D);
 
-                // 2. Draw Inner Safe Zone - lighter earth color
+                // 2. Draw Inner Safe Zone - 較淺土黃色
                 this.ctx.strokeStyle = '#e5d3b0'; // wood-300
                 this.ctx.lineWidth = CONFIG.pathWidth * CONFIG.tolerance;
                 this.ctx.stroke(this.path2D);
 
-                // 3. Draw Center Guide (subtle)
+                // 3. Draw Center Guide (微弱白線)
                 this.ctx.strokeStyle = 'rgba(255,255,255,0.4)';
                 this.ctx.lineWidth = 1;
                 this.ctx.stroke(this.path2D);
@@ -614,7 +639,7 @@
                 const start = STATE.pathPoints[0];
                 const end = STATE.pathPoints[STATE.pathPoints.length-1];
                 
-                // Start Text (Bottom Left)
+                // 起點標示
                 this.ctx.font = 'bold 18px "Noto Sans TC"';
                 this.ctx.fillStyle = '#b45309';
                 this.ctx.textAlign = 'center';
@@ -622,10 +647,10 @@
                 
                 this.ctx.beginPath();
                 this.ctx.arc(start.x, start.y, 8, 0, Math.PI*2);
-                this.ctx.fillStyle = '#166534'; // Green dot
+                this.ctx.fillStyle = '#166534'; 
                 this.ctx.fill();
 
-                // End Text (Top Right)
+                // 終點標示
                 this.ctx.fillStyle = '#b45309';
                 this.ctx.fillText('終點', end.x, end.y - 25);
                 this.ctx.beginPath();
@@ -699,10 +724,9 @@
             },
 
             checkCollision(x, y) {
-                // 1. Progress Calculation
+                // 1. 進度計算
                 let minDist = Infinity;
                 let closestIdx = 0;
-                
                 for(let i=0; i<STATE.pathPoints.length; i++) {
                     const p = STATE.pathPoints[i];
                     const d = (x - p.x)**2 + (y - p.y)**2;
@@ -713,9 +737,8 @@
                 }
                 const dist = Math.sqrt(minDist);
                 
-                // 2. Collision Detection (isPointInStroke + Radial Sampling)
+                // 2. 碰撞判定 (isPointInStroke + 圓周取樣)
                 let collided = false;
-
                 this.ctx.save();
                 this.ctx.lineWidth = CONFIG.pathWidth * CONFIG.tolerance;
                 this.ctx.lineCap = 'round';
@@ -739,7 +762,6 @@
                         }
                     }
                 }
-
                 this.ctx.restore();
                 
                 return { collided, closestIdx, dist };
