@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>土之穩行｜指尖走線</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"Noto Sans TC"', 'sans-serif'],
+            },
+            colors: {
+              // 修改為土行色系：淺黃褐、卡其、土色
+              wood: {
+                50: '#fdfcf5',  // 奶油白
+                100: '#f7f3e8', // 淺卡其
+                200: '#efe6d0', // 淺土黃
+                300: '#e5d3b0', // 土黃
+                400: '#d6ba8a', // 麥色
+                500: '#c29d66', // 主土色
+                600: '#a37e4d', // 深土色
+                700: '#85623d', // 褐色
+                800: '#6d4f35', // 深褐
+                900: '#59402f', // 焦褐
+              },
+              // 強調色：明亮的赭土色/磚紅色，取代原本的綠色
+              nature: {
+                light: '#fbf3db',
+                main: '#b45309', // 赭土色
+                dark: '#8c3a00',
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        font-family: 'Noto Sans TC', sans-serif;
+        background-color: #fdfcf5;
+        /* Removed global overflow:hidden to allow scrolling on start screen */
+      }
+      
+      /* Only lock scroll during gameplay */
+      body.no-scroll {
+        overflow: hidden; 
+        touch-action: none;
+      }
+
+      /* 土行紋理：柔和的沙土質感 */
+      .wood-texture {
+        background-color: #fdfcf5;
+        background-image: radial-gradient(#d6ba8a 0.5px, transparent 0.5px), radial-gradient(#d6ba8a 0.5px, #fdfcf5 0.5px);
+        background-size: 20px 20px;
+        background-position: 0 0, 10px 10px;
+      }
+      /* Utility for hiding elements */
+      .hidden-force {
+        display: none !important;
+      }
+      /* Animation classes */
+      .fade-in { animation: fadeIn 0.3s ease-out; }
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+      /* Pulse animation for the player ball */
+      .dot-pulse {
+        box-shadow: 0 0 0 0 rgba(180, 83, 9, 0.7);
+        animation: pulse-orange 2s infinite;
+      }
+      @keyframes pulse-orange {
+        0% {
+          transform: scale(0.95);
+          box-shadow: 0 0 0 0 rgba(180, 83, 9, 0.7);
+        }
+        70% {
+          transform: scale(1);
+          box-shadow: 0 0 0 10px rgba(180, 83, 9, 0);
+        }
+        100% {
+          transform: scale(0.95);
+          box-shadow: 0 0 0 0 rgba(180, 83, 9, 0);
+        }
+      }
+
+      /* Player Group Styles */
+      #player-group {
+        position: absolute;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        /* Center the ball (26px) by offsetting -13px left/top */
+        /* But we update position dynamically via JS */
+        transform-origin: center left; 
+        cursor: grab;
+      }
+      #player-group:active {
+        cursor: grabbing;
+      }
+      #player-ball {
+        width: 26px; /* Adjusted radius 13 * 2 */
+        height: 26px;
+        background-color: #b45309; /* nature-main */
+        border-radius: 50%;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        pointer-events: none; /* Make ball transparent to clicks so we grab the handle */
+        position: relative;
+        z-index: 2;
+        /* Removed white border as requested */
+      }
+      #player-handle {
+        width: 60px;
+        height: 14px;
+        background-color: #59402f; /* wood-900 */
+        border-radius: 0 8px 8px 0;
+        margin-left: -10px; /* Slight overlap */
+        position: relative;
+        z-index: 1;
+        /* Texture for handle */
+        background-image: linear-gradient(90deg, transparent 50%, rgba(255,255,255,0.1) 50%);
+        background-size: 4px 100%;
+        box-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        /* This is the drag target */
+        pointer-events: auto;
+      }
+      /* Expand touch area for handle */
+      #player-handle::after {
+        content: '';
+        position: absolute;
+        top: -20px;
+        bottom: -20px;
+        left: -10px;
+        right: -10px;
+      }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0"
+  }
+}
+</script>
+</head>
+<body class="wood-texture text-wood-900 min-h-screen tracking-wide">
+
+    <!-- App Container -->
+    <div id="app" class="relative min-h-screen flex flex-col">
+        
+        <!-- 1. Start Screen -->
+        <div id="screen-start" class="min-h-screen flex flex-col items-center justify-center p-4 z-50 relative pb-10">
+            <div class="max-w-md w-full bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl border-2 border-wood-300 text-center fade-in my-4">
+                <div class="mb-6"><span class="text-5xl">⛰️</span></div>
+                <!-- Title Updated -->
+                <h1 class="text-3xl md:text-4xl font-black text-wood-900 mb-8 tracking-widest">土之穩行｜指尖走線</h1>
+
+                <div class="bg-wood-50 p-6 rounded-xl border border-wood-200 text-left mb-8">
+                    <!-- Description Updated -->
+                    <p class="text-wood-700 mb-4 font-bold tracking-wider text-lg">脾主肌肉，氣血充盈則動作靈巧。</p>
+                    <p class="text-base text-wood-600 mb-6 leading-relaxed font-medium tracking-wide">
+                        土行對應臟腑為脾與胃，與消化、肌肉穩定有關。
+                    </p>
+                    <h2 class="text-xl font-bold text-wood-800 mb-3 border-b border-wood-300 pb-2 flex items-center gap-2 tracking-wider">
+                        <span>📜 遊戲規則</span>
+                    </h2>
+                    <!-- Rules Updated -->
+                    <ul class="space-y-3 text-wood-800 leading-relaxed text-base font-medium tracking-wide">
+                        <li class="flex items-start gap-2">
+                            <span class="font-bold text-nature-dark">①</span>
+                            <span>限時30秒，沿著發光路徑穩穩拖曳小圓點前進</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="font-bold text-nature-dark">②</span>
+                            <span>圓點邊緣一碰觸邊線，遊戲立即結束（難度提升）</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="font-bold text-nature-dark">③</span>
+                            <span>依前進距離計分，完成比例越高代表肌肉力量穩定</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <button onclick="game.startCountdown()" class="w-full font-bold rounded-lg transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center gap-2 bg-nature-main hover:bg-nature-dark text-white shadow-wood-300 px-8 py-3 text-2xl tracking-widest">
+                    開始遊戲
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. Game Screen (Initially Hidden) -->
+        <div id="screen-game" class="hidden-force flex-1 flex flex-col h-screen">
+            <!-- Top Bar -->
+            <div class="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur shadow-md border-b border-wood-200 h-16 px-4">
+                <div class="max-w-6xl mx-auto h-full flex items-center justify-between">
+                    <!-- Timer -->
+                    <div class="flex items-center gap-2 w-1/3">
+                        <div id="timer-display" class="font-mono text-3xl font-bold text-wood-900 flex items-center gap-2">
+                            <span>⏳</span>
+                            <span id="timer-val">30</span>s
+                        </div>
+                    </div>
+                    <!-- Title Deleted as requested -->
+                    <div class="w-1/3"></div> 
+                    
+                    <!-- Buttons -->
+                    <div class="flex items-center justify-end gap-2 w-2/3 md:w-1/3">
+                        <button onclick="ui.showRules()" class="font-bold rounded-lg transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center gap-2 border-2 border-wood-600 text-wood-800 hover:bg-wood-100 px-3 py-1 text-base tracking-wide">
+                            規則
+                        </button>
+                        <button onclick="game.restart()" class="font-bold rounded-lg transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center gap-2 bg-wood-600 hover:bg-wood-700 text-white px-3 py-1 text-base tracking-wide">
+                            重來
+                        </button>
+                        <button id="btn-result" onclick="ui.showResult()" disabled class="font-bold rounded-lg transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center gap-2 bg-wood-600 hover:bg-wood-700 text-white px-3 py-1 text-base opacity-50 cursor-not-allowed tracking-wide">
+                            結果
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Area Container -->
+            <div class="w-full flex-1 pt-16 pb-4 flex items-center justify-center overflow-hidden relative">
+                <div id="game-grid" class="relative w-full max-w-4xl h-[85vh] bg-white/50 rounded-xl border-2 border-wood-200 shadow-inner m-4 touch-none select-none">
+                    <!-- Canvas for drawing the path -->
+                    <canvas id="game-canvas" class="absolute inset-0 w-full h-full z-10"></canvas>
+                    
+                    <!-- Player Group (Ball + Handle) -->
+                    <div id="player-group" class="hidden-force">
+                        <div id="player-ball" class="dot-pulse"></div>
+                        <div id="player-handle"></div>
+                    </div>
+                    
+                    <!-- Tutorial Hint -->
+                    <div id="start-hint" class="absolute bottom-[10%] left-1/2 transform -translate-x-1/2 text-wood-800 font-bold text-xl bg-white/90 px-4 py-2 rounded-lg pointer-events-none z-30 animate-bounce shadow-lg border border-wood-200 whitespace-nowrap">
+                        拖曳右側手柄向上
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Countdown Overlay -->
+        <div id="overlay-countdown" class="hidden-force fixed inset-0 z-50 flex items-center justify-center bg-wood-900/40 backdrop-blur-sm">
+            <div id="countdown-number" class="text-9xl font-black text-white drop-shadow-lg animate-ping">3</div>
+        </div>
+
+        <!-- 4. Result Modal -->
+        <div id="modal-result" class="hidden-force fixed inset-0 z-50 flex items-center justify-center p-4 bg-wood-900/60 backdrop-blur-sm fade-in">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden p-6 text-center relative max-h-[90vh] overflow-y-auto">
+                <!-- Close X Button -->
+                <button onclick="ui.closeResult()" class="absolute top-4 right-4 text-wood-400 hover:text-wood-700 transition-colors p-2 rounded-full hover:bg-wood-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+
+                <!-- Result Icon -->
+                <div class="text-7xl mb-4">⛰️</div>
+                <div class="mb-4">
+                    <!-- Result Subtitle -->
+                    <p class="text-wood-600 mb-1 font-bold tracking-wider text-lg">穩行結果</p>
+                    <!-- Result Main Text (Percentage) -->
+                    <p class="text-3xl font-black text-wood-900 tracking-wide">
+                        完成 <span id="res-percent" class="text-nature-main">0</span>% 路徑
+                    </p>
+                </div>
+                <div class="bg-wood-50 p-4 rounded-xl border-2 border-wood-200 mb-4">
+                    <h3 id="res-msg" class="text-2xl font-bold text-nature-main mb-2 tracking-wider"></h3>
+                    <p id="res-submsg" class="text-wood-700 text-base mb-3 font-medium tracking-wide"></p>
+                    <div class="flex justify-center items-center gap-1 text-wood-400 text-base font-bold bg-white py-2 rounded-lg border border-wood-100">
+                        <span>得分：</span>
+                        <span id="res-score" class="text-3xl text-wood-800">0</span>
+                        <span>分</span>
+                    </div>
+                </div>
+                
+                <!-- Scoring Table Updated -->
+                <div class="text-left mb-6">
+                    <h4 class="text-base font-bold text-wood-500 mb-2 border-b border-wood-100 pb-1 tracking-wider">🏅 計分方式</h4>
+                    <div class="space-y-2 text-sm text-wood-700 tracking-wide">
+                        <div class="flex justify-between items-center whitespace-nowrap gap-2">
+                            <span class="font-bold text-nature-main">完成 70～100% 路徑</span>
+                            <span class="font-bold">3分</span>
+                            <span class="text-right flex-1 text-wood-500 overflow-hidden text-ellipsis">脾胃強健，動作靈巧</span>
+                        </div>
+                        <div class="flex justify-between items-center whitespace-nowrap gap-2">
+                            <span class="font-bold text-nature-main">完成 35～69% 路徑</span>
+                            <span class="font-bold">2分</span>
+                            <span class="text-right flex-1 text-wood-500 overflow-hidden text-ellipsis">脾胃不錯，穩中帶進</span>
+                        </div>
+                        <div class="flex justify-between items-center whitespace-nowrap gap-2">
+                            <span class="font-bold text-nature-main">完成 0～34% 路徑</span>
+                            <span class="font-bold">1分</span>
+                            <span class="text-right flex-1 text-wood-500 overflow-hidden text-ellipsis">脾胃警告，需多調養</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <button onclick="game.startCountdown(); ui.closeResult();" class="w-full font-bold rounded-lg transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center gap-2 bg-nature-main hover:bg-nature-dark text-white shadow-wood-300 px-6 py-2 text-lg tracking-widest">
+                        再來一次
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Rules Modal (In-Game) -->
+        <div id="modal-rules" class="hidden-force fixed inset-0 z-50 flex items-center justify-center p-4 bg-wood-900/60 backdrop-blur-sm fade-in">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden p-6 relative max-h-[90vh] overflow-y-auto">
+                 <!-- Close X Button -->
+                <button onclick="ui.closeRules()" class="absolute top-4 right-4 text-wood-400 hover:text-wood-700 transition-colors p-2 rounded-full hover:bg-wood-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+
+                <!-- Rules Header Updated -->
+                <p class="text-wood-700 mb-2 font-bold text-center tracking-wider text-lg">脾主肌肉，氣血充盈則動作靈巧。</p>
+                <p class="text-base text-wood-600 mb-6 leading-relaxed text-center font-medium tracking-wide">
+                    土行對應臟腑為脾與胃，與消化、肌肉穩定有關。
+                </p>
+                <h3 class="text-2xl font-bold text-center text-wood-800 mb-4 border-b border-wood-100 pb-3 tracking-widest">📜 遊戲規則</h3>
+                <!-- Rules Content Updated -->
+                <ul class="space-y-4 text-wood-800 font-medium tracking-wide">
+                    <li class="flex gap-2 text-base"><span class="font-bold text-nature-main">①</span><span>限時30秒，沿著發光路徑穩穩拖曳小圓點前進</span></li>
+                    <li class="flex gap-2 text-base"><span class="font-bold text-nature-main">②</span><span>圓點邊緣一碰觸邊線，遊戲立即結束（難度提升）</span></li>
+                    <li class="flex gap-2 text-base"><span class="font-bold text-nature-main">③</span><span>依前進距離計分，完成比例越高代表肌肉力量穩定</span></li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Game Logic -->
+    <script>
+        const CONFIG = {
+            duration: 30,
+            pathWidth: 38, // STRICTLY UNCHANGED
+            ballRadius: 13, // Adjusted to 13 as requested (Visual size 26px)
+            tolerance: 0.93, // Revised to 0.93 for better visual alignment
+            startGraceTime: 300, 
+            collisionSlackPx: 1.5, // Visual correction pixel value (antialiasing buffer)
+        };
+
+        const STATE = {
+            status: 'START',
+            timeLeft: CONFIG.duration,
+            timerId: null,
+            progress: 0,
+            isDragging: false,
+            pathPoints: [], 
+            totalLength: 0,
+            dragStartPos: { x: 0, y: 0 },
+            ballStartPos: { x: 0, y: 0 }, 
+            dragStartTime: 0,
+            currentBallPos: { x: 0, y: 0 },
+        };
+
+        // UI Controller
+        const ui = {
+            els: {
+                startScreen: document.getElementById('screen-start'),
+                gameScreen: document.getElementById('screen-game'),
+                gameGrid: document.getElementById('game-grid'),
+                canvas: document.getElementById('game-canvas'),
+                playerGroup: document.getElementById('player-group'), 
+                playerBall: document.getElementById('player-ball'), 
+                playerHandle: document.getElementById('player-handle'),
+                startHint: document.getElementById('start-hint'),
+                timerDisplay: document.getElementById('timer-display'),
+                timerVal: document.getElementById('timer-val'),
+                btnResult: document.getElementById('btn-result'),
+                overlayCountdown: document.getElementById('overlay-countdown'),
+                countdownNum: document.getElementById('countdown-number'),
+                modalResult: document.getElementById('modal-result'),
+                modalRules: document.getElementById('modal-rules'),
+                resPercent: document.getElementById('res-percent'),
+                resMsg: document.getElementById('res-msg'),
+                resSubMsg: document.getElementById('res-submsg'),
+                resScore: document.getElementById('res-score'),
+            },
+
+            showGame() {
+                this.els.startScreen.classList.add('hidden-force');
+                this.els.gameScreen.classList.remove('hidden-force');
+                setTimeout(() => game.resizeCanvas(), 50);
+            },
+
+            showStart() {
+                this.els.startScreen.classList.remove('hidden-force');
+                this.els.gameScreen.classList.add('hidden-force');
+            },
+
+            updateTimer(val) {
+                this.els.timerVal.textContent = val;
+                if (val <= 5) {
+                    this.els.timerDisplay.classList.add('text-red-600', 'animate-pulse');
+                    this.els.timerDisplay.classList.remove('text-wood-900');
+                } else {
+                    this.els.timerDisplay.classList.remove('text-red-600', 'animate-pulse');
+                    this.els.timerDisplay.classList.add('text-wood-900');
+                }
+            },
+
+            enableResultBtn(enabled) {
+                if (enabled) {
+                    this.els.btnResult.disabled = false;
+                    this.els.btnResult.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    this.els.btnResult.disabled = true;
+                    this.els.btnResult.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            },
+
+            updateBallPosition(cx, cy) {
+                this.els.playerGroup.style.left = `${cx - 13}px`; // Adjusted center offset for 26px ball
+                this.els.playerGroup.style.top = `${cy - 13}px`;
+                this.els.playerGroup.classList.remove('hidden-force');
+                STATE.currentBallPos = { x: cx, y: cy };
+            },
+
+            hideDot() {
+                this.els.playerGroup.classList.add('hidden-force');
+            },
+
+            showCountdown(cb) {
+                this.els.overlayCountdown.classList.remove('hidden-force');
+                let count = 3;
+                this.els.countdownNum.textContent = count;
+                const int = setInterval(() => {
+                    count--;
+                    if (count > 0) {
+                        this.els.countdownNum.textContent = count;
+                    } else {
+                        clearInterval(int);
+                        this.els.overlayCountdown.classList.add('hidden-force');
+                        cb();
+                    }
+                }, 1000);
+            },
+
+            showResult() {
+                const result = game.calculateResult();
+                this.els.resPercent.textContent = Math.round(STATE.progress);
+                this.els.resMsg.textContent = result.message;
+                this.els.resSubMsg.textContent = result.subMessage;
+                this.els.resScore.textContent = result.score;
+                this.els.modalResult.classList.remove('hidden-force');
+            },
+
+            closeResult() {
+                this.els.modalResult.classList.add('hidden-force');
+            },
+
+            showRules() { this.els.modalRules.classList.remove('hidden-force'); },
+            closeRules() { this.els.modalRules.classList.add('hidden-force'); },
+
+            toggleHint(show) {
+                if(show) this.els.startHint.classList.remove('hidden-force');
+                else this.els.startHint.classList.add('hidden-force');
+            }
+        };
+
+        // Game Logic
+        const game = {
+            ctx: null,
+            path2D: null,
+
+            init() {
+                STATE.status = 'START';
+                ui.showStart();
+                this.ctx = ui.els.canvas.getContext('2d');
+                window.addEventListener('resize', () => {
+                   if (STATE.status !== 'START') this.resizeCanvas();
+                });
+
+                const handle = ui.els.playerHandle;
+                handle.addEventListener('pointerdown', (e) => this.handleDragStart(e));
+                window.addEventListener('pointermove', (e) => this.handleDragMove(e));
+                window.addEventListener('pointerup', (e) => this.handleDragEnd(e));
+                window.addEventListener('pointercancel', (e) => this.handleDragEnd(e));
+            },
+
+            startCountdown() {
+                ui.showGame();
+                ui.closeResult();
+                STATE.status = 'COUNTDOWN';
+                ui.enableResultBtn(false);
+                ui.updateTimer(CONFIG.duration);
+                ui.toggleHint(false);
+                
+                this.resizeCanvas(); 
+                
+                if(STATE.pathPoints.length > 0) {
+                    const start = STATE.pathPoints[0];
+                    ui.updateBallPosition(start.x, start.y);
+                }
+
+                ui.showCountdown(() => {
+                    this.startPlaying();
+                });
+            },
+
+            resizeCanvas() {
+                const container = ui.els.gameGrid;
+                ui.els.canvas.width = container.offsetWidth;
+                ui.els.canvas.height = container.offsetHeight;
+                this.generatePath();
+                this.draw();
+                
+                if (STATE.pathPoints.length > 0 && !STATE.isDragging) {
+                     const start = STATE.pathPoints[0];
+                     ui.updateBallPosition(start.x, start.y);
+                }
+            },
+
+            generatePath() {
+                // Deterministic Vertical Maze Path (Snake-like Vertical flow)
+                // Start: Bottom-Left, End: Top-Right
+                const w = ui.els.canvas.width;
+                const h = ui.els.canvas.height;
+                
+                this.path2D = new Path2D();
+                STATE.pathPoints = [];
+                
+                const marginX = 45; 
+                const marginY = 120;
+                
+                const startX = marginX;
+                const endX = w - marginX;
+                const yTop = marginY;
+                const yBottom = h - marginY;
+                
+                // Deterministic columns (odd number ensures we end at Top-Right)
+                const columns = 7; 
+                const stepX = (endX - startX) / (columns - 1);
+                
+                let points = [];
+                // Initialize start point explicitly at bottom-left
+                points.push({x: startX, y: yBottom});
+                
+                for (let i = 0; i < columns; i++) {
+                    const x = startX + i * stepX;
+                    const targetY = (i % 2 === 0) ? yTop : yBottom;
+                    
+                    // Vertical segment in current column
+                    points.push({x: x, y: targetY});
+                    
+                    // Horizontal shift to next column
+                    if (i < columns - 1) {
+                        points.push({x: x + stepX, y: targetY});
+                    }
+                }
+                
+                // Draw path and populate sampling points
+                if (points.length > 0) {
+                    this.path2D.moveTo(points[0].x, points[0].y);
+                    STATE.pathPoints.push({x: points[0].x, y: points[0].y, len: 0});
+                    
+                    let cLen = 0;
+                    
+                    for (let i = 1; i < points.length; i++) {
+                        const p1 = points[i-1];
+                        const p2 = points[i];
+                        
+                        this.path2D.lineTo(p2.x, p2.y);
+                        
+                        // Interpolate points for accurate progress tracking and collision sampling
+                        const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+                        const steps = Math.max(1, Math.ceil(dist / 4)); // Density: approx every 4px
+                        
+                        for (let s = 1; s <= steps; s++) {
+                            const t = s / steps;
+                            const px = p1.x + (p2.x - p1.x) * t;
+                            const py = p1.y + (p2.y - p1.y) * t;
+                            const segLen = dist / steps;
+                            cLen += segLen;
+                            STATE.pathPoints.push({x: px, y: py, len: cLen});
+                        }
+                    }
+                    STATE.totalLength = cLen;
+                }
+            },
+
+            draw() {
+                if (!this.ctx) return;
+                const w = ui.els.canvas.width;
+                const h = ui.els.canvas.height;
+                
+                this.ctx.clearRect(0, 0, w, h);
+                this.ctx.lineCap = 'round';
+                this.ctx.lineJoin = 'round';
+
+                // 1. Draw Border (The "Wall") - darker soil color
+                this.ctx.strokeStyle = '#a37e4d'; // wood-600
+                this.ctx.lineWidth = CONFIG.pathWidth;
+                this.ctx.stroke(this.path2D);
+
+                // 2. Draw Inner Safe Zone - lighter earth color
+                this.ctx.strokeStyle = '#e5d3b0'; // wood-300
+                this.ctx.lineWidth = CONFIG.pathWidth * CONFIG.tolerance;
+                this.ctx.stroke(this.path2D);
+
+                // 3. Draw Center Guide (subtle)
+                this.ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+                this.ctx.lineWidth = 1;
+                this.ctx.stroke(this.path2D);
+                
+                // Draw Start and End Markers
+                const start = STATE.pathPoints[0];
+                const end = STATE.pathPoints[STATE.pathPoints.length-1];
+                
+                // Start Text (Bottom Left)
+                this.ctx.font = 'bold 18px "Noto Sans TC"';
+                this.ctx.fillStyle = '#b45309';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText('起點', start.x, start.y + 45); 
+                
+                this.ctx.beginPath();
+                this.ctx.arc(start.x, start.y, 8, 0, Math.PI*2);
+                this.ctx.fillStyle = '#166534'; // Green dot
+                this.ctx.fill();
+
+                // End Text (Top Right)
+                this.ctx.fillStyle = '#b45309';
+                this.ctx.fillText('終點', end.x, end.y - 25);
+                this.ctx.beginPath();
+                this.ctx.arc(end.x, end.y, 10, 0, Math.PI * 2);
+                this.ctx.fillStyle = '#b45309';
+                this.ctx.fill();
+            },
+
+            startPlaying() {
+                STATE.status = 'PLAYING';
+                STATE.timeLeft = CONFIG.duration;
+                STATE.progress = 0;
+                STATE.isDragging = false;
+                
+                document.body.classList.add('no-scroll');
+                ui.toggleHint(true);
+                
+                if (STATE.timerId) clearInterval(STATE.timerId);
+                STATE.timerId = setInterval(() => {
+                    STATE.timeLeft--;
+                    ui.updateTimer(STATE.timeLeft);
+                    
+                    if (STATE.timeLeft <= 0) {
+                        this.finishGame();
+                    }
+                }, 1000);
+            },
+
+            handleDragStart(e) {
+                if (STATE.status !== 'PLAYING') return;
+                STATE.isDragging = true;
+                ui.toggleHint(false);
+                STATE.dragStartPos = { x: e.clientX, y: e.clientY };
+                STATE.ballStartPos = { ...STATE.currentBallPos };
+                STATE.dragStartTime = Date.now();
+                ui.els.playerGroup.style.cursor = 'grabbing';
+                ui.els.playerHandle.style.cursor = 'grabbing';
+            },
+
+            handleDragMove(e) {
+                if (STATE.status !== 'PLAYING' || !STATE.isDragging) return;
+                e.preventDefault(); 
+
+                const deltaX = e.clientX - STATE.dragStartPos.x;
+                const deltaY = e.clientY - STATE.dragStartPos.y;
+                const newX = STATE.ballStartPos.x + deltaX;
+                const newY = STATE.ballStartPos.y + deltaY;
+                
+                const gridRect = ui.els.gameGrid.getBoundingClientRect();
+                
+                if (newX < 0 || newX > gridRect.width || newY < 0 || newY > gridRect.height) {
+                    this.failGame();
+                    return;
+                }
+
+                ui.updateBallPosition(newX, newY);
+
+                const timeElapsed = Date.now() - STATE.dragStartTime;
+                if (timeElapsed < CONFIG.startGraceTime) {
+                    this.checkProgress(newX, newY);
+                    return; 
+                }
+
+                const collisionInfo = this.checkCollision(newX, newY);
+                
+                if (collisionInfo.collided) {
+                    this.failGame();
+                } else {
+                    this.updateProgressFromInfo(collisionInfo);
+                }
+            },
+
+            checkCollision(x, y) {
+                // 1. Progress Calculation
+                let minDist = Infinity;
+                let closestIdx = 0;
+                
+                for(let i=0; i<STATE.pathPoints.length; i++) {
+                    const p = STATE.pathPoints[i];
+                    const d = (x - p.x)**2 + (y - p.y)**2;
+                    if (d < minDist) {
+                        minDist = d;
+                        closestIdx = i;
+                    }
+                }
+                const dist = Math.sqrt(minDist);
+                
+                // 2. Collision Detection (isPointInStroke + Radial Sampling)
+                let collided = false;
+
+                this.ctx.save();
+                this.ctx.lineWidth = CONFIG.pathWidth * CONFIG.tolerance;
+                this.ctx.lineCap = 'round';
+                this.ctx.lineJoin = 'round';
+                
+                const effectiveRadius = CONFIG.ballRadius - CONFIG.collisionSlackPx;
+                const samples = 16; 
+                const angleStep = (Math.PI * 2) / samples;
+
+                if (!this.ctx.isPointInStroke(this.path2D, x, y)) {
+                    collided = true;
+                } else {
+                    for (let i = 0; i < samples; i++) {
+                        const angle = i * angleStep;
+                        const sx = x + Math.cos(angle) * effectiveRadius;
+                        const sy = y + Math.sin(angle) * effectiveRadius;
+                        
+                        if (!this.ctx.isPointInStroke(this.path2D, sx, sy)) {
+                            collided = true;
+                            break;
+                        }
+                    }
+                }
+
+                this.ctx.restore();
+                
+                return { collided, closestIdx, dist };
+            },
+
+            checkProgress(x, y) {
+                const info = this.checkCollision(x, y);
+                this.updateProgressFromInfo(info);
+            },
+            
+            updateProgressFromInfo(info) {
+                const currentLen = STATE.pathPoints[info.closestIdx].len;
+                const percent = (currentLen / STATE.totalLength) * 100;
+                
+                if (percent > STATE.progress) {
+                    STATE.progress = percent;
+                }
+                
+                if (percent >= 98) {
+                    STATE.progress = 100;
+                    this.finishGame();
+                }
+            },
+
+            handleDragEnd(e) {
+                if (STATE.status === 'PLAYING') {
+                    STATE.isDragging = false;
+                    ui.els.playerGroup.style.cursor = 'grab';
+                    ui.els.playerHandle.style.cursor = 'grab';
+                }
+            },
+
+            failGame() {
+                STATE.status = 'FINISHED';
+                clearInterval(STATE.timerId);
+                document.body.classList.remove('no-scroll');
+                ui.els.playerBall.classList.add('bg-red-600');
+                ui.els.playerBall.classList.remove('bg-nature-main');
+                setTimeout(() => {
+                    ui.els.playerBall.classList.remove('bg-red-600');
+                    ui.els.playerBall.classList.add('bg-nature-main');
+                    ui.enableResultBtn(true);
+                    ui.showResult();
+                }, 500);
+            },
+
+            finishGame() {
+                STATE.status = 'FINISHED';
+                clearInterval(STATE.timerId);
+                document.body.classList.remove('no-scroll');
+                ui.enableResultBtn(true);
+                ui.showResult();
+            },
+
+            restart() {
+                clearInterval(STATE.timerId);
+                document.body.classList.remove('no-scroll');
+                this.init();
+            },
+
+            calculateResult() {
+                const p = Math.round(STATE.progress);
+                if (p >= 70) {
+                    return { score: 3, message: '脾胃強健，動作靈巧', subMessage: '手部肌肉非常穩定，表現亮眼。' };
+                } else if (p >= 35) {
+                    return { score: 2, message: '脾胃不錯，穩中帶進', subMessage: '穩定度不錯，下次就能走得更遠。' };
+                } else {
+                    return { score: 1, message: '脾胃警告，需多調養', subMessage: '深呼吸，下一次會更穩的。' };
+                }
+            }
+        };
+
+        game.init();
+
+    </script>
+</body>
+</html>
