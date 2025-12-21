@@ -67,7 +67,11 @@ const ui = {
     },
 
     showGame() {
+        // Lock both body and html to prevent scrolling on all devices
         document.body.classList.add('no-scroll');
+        document.documentElement.classList.add('no-scroll');
+        window.scrollTo(0, 0);
+
         window.addEventListener('touchmove', preventRubberBand, { passive: false });
         
         this.els.startScreen.classList.add('hidden-force');
@@ -77,6 +81,7 @@ const ui = {
 
     showStart() {
         document.body.classList.remove('no-scroll');
+        document.documentElement.classList.remove('no-scroll');
         window.removeEventListener('touchmove', preventRubberBand);
         
         this.els.startScreen.classList.remove('hidden-force');
@@ -127,6 +132,7 @@ const ui = {
 
     showResult() {
         document.body.classList.remove('no-scroll');
+        document.documentElement.classList.remove('no-scroll');
         window.removeEventListener('touchmove', preventRubberBand);
         
         const result = game.calculateResult();
@@ -175,8 +181,7 @@ const game = {
     },
 
     startCountdown() {
-        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-        ui.showGame();
+        ui.showGame(); // Viewport reset and lock happens here
         ui.closeResult();
         STATE.status = 'COUNTDOWN';
         ui.enableResultBtn(false);
@@ -187,7 +192,11 @@ const game = {
             const start = STATE.pathPoints[0];
             ui.updateBallPosition(start.x, start.y);
         }
-        ui.showCountdown(() => { this.startPlaying(); });
+        ui.showCountdown(() => { 
+            // Final force-reset of viewport just before starting game
+            window.scrollTo(0, 0);
+            this.startPlaying(); 
+        });
     },
 
     resizeCanvas() {
