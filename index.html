@@ -47,11 +47,11 @@
         background-color: #fdfcf5;
       }
       
-      /* Only lock scroll during start screen */
+      /* 只在倒數與遊戲中套用鎖捲動 */
       body.no-scroll {
         overflow: hidden; 
         height: 100vh;
-        height: 100svh;
+        height: 100svh; /* 支援新版瀏覽器 */
         overscroll-behavior: none;
       }
 
@@ -223,7 +223,7 @@
             <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden p-6 text-center relative max-h-[90vh] overflow-y-auto">
                 <button onclick="ui.closeResult()" class="absolute top-4 right-4 text-wood-400 hover:text-wood-700 transition-colors p-2 rounded-full hover:bg-wood-100">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" ="" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
                 <div class="text-7xl mb-4">⛰️</div>
@@ -294,8 +294,8 @@
         };
 
         const preventRubberBand = (e) => {
-            // Only prevent scrolling on the start screen
-            if (STATE.status === 'START' || STATE.status === 'COUNTDOWN') {
+            // 僅在倒數與遊戲狀態防止彈性捲動
+            if (STATE.status === 'COUNTDOWN' || STATE.status === 'PLAYING') {
                 e.preventDefault();
             }
         };
@@ -324,18 +324,22 @@
             },
 
             showGame() {
+                // 套用滾動鎖定與 iOS 防橡皮筋
+                document.body.classList.add('no-scroll');
+                window.addEventListener('touchmove', preventRubberBand, { passive: false });
+                
                 this.els.startScreen.classList.add('hidden-force');
                 this.els.gameScreen.classList.remove('hidden-force');
-                document.body.classList.remove('no-scroll');
-                window.removeEventListener('touchmove', preventRubberBand, { passive: false });
                 setTimeout(() => game.resizeCanvas(), 50);
             },
 
             showStart() {
+                // 移除滾動鎖定
+                document.body.classList.remove('no-scroll');
+                window.removeEventListener('touchmove', preventRubberBand, { passive: false });
+                
                 this.els.startScreen.classList.remove('hidden-force');
                 this.els.gameScreen.classList.add('hidden-force');
-                document.body.classList.add('no-scroll');
-                window.addEventListener('touchmove', preventRubberBand, { passive: false });
             },
 
             updateTimer(val) {
@@ -383,6 +387,10 @@
             },
 
             showResult() {
+                // 進入結果畫面，移除鎖定
+                document.body.classList.remove('no-scroll');
+                window.removeEventListener('touchmove', preventRubberBand, { passive: false });
+                
                 const result = game.calculateResult();
                 this.els.resPercent.textContent = Math.round(STATE.progress);
                 this.els.resMsg.textContent = result.message;
@@ -420,6 +428,9 @@
             },
 
             startCountdown() {
+                // 按下開始遊戲瞬間回頂，確保位置正確
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                
                 ui.showGame();
                 ui.closeResult();
                 STATE.status = 'COUNTDOWN';
