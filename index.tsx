@@ -108,6 +108,10 @@ const ui = {
     },
 
     updateBallPosition(cx: number, cy: number) {
+        // Center the group containing ball and bottom vertical handle on the target cx, cy
+        // cx, cy is the intended center of the ball.
+        // Group contains ball (26x26) and vertical handle.
+        // flex-direction: column + align-items: center in CSS handles horizontal centering.
         this.els.playerGroup.style.left = `${cx - 13}px`;
         this.els.playerGroup.style.top = `${cy - 13}px`;
         this.els.playerGroup.classList.remove('hidden-force');
