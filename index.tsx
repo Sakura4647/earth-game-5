@@ -1,3 +1,7 @@
+/**
+ * 土之穩行｜指尖走線 - 核心邏輯
+ */
+
 const CONFIG = {
     duration: 30,
     pathWidth: 38,
@@ -22,8 +26,8 @@ const STATE = {
 };
 
 const preventRubberBand = (e: TouchEvent) => {
-    // A) 禁止滾動：包含 START, COUNTDOWN, PLAYING
-    if (['START', 'COUNTDOWN', 'PLAYING'].includes(STATE.status)) {
+    // 僅在倒數與遊戲狀態防止彈性捲動
+    if (STATE.status === 'COUNTDOWN' || STATE.status === 'PLAYING') {
         e.preventDefault();
     }
 };
@@ -50,9 +54,10 @@ const ui = {
         resSubMsg: document.getElementById('res-submsg')!,
         resScore: document.getElementById('res-score')!,
         
-        btnStart: document.getElementById('btn-start')!,
-        btnShowRules: document.getElementById('btn-show-rules')!,
-        btnRestart: document.getElementById('btn-restart')!,
+        // Buttons
+        btnStartGame: document.getElementById('btn-start-game')!,
+        btnRules: document.getElementById('btn-rules')!,
+        btnRestartGame: document.getElementById('btn-restart-game')!,
         btnShowResult: document.getElementById('btn-result')!,
         btnCloseResult: document.getElementById('btn-close-result')!,
         btnPlayAgain: document.getElementById('btn-play-again')!,
@@ -60,7 +65,6 @@ const ui = {
     },
 
     showGame() {
-        // 套用滾動鎖定與 iOS 防橡皮筋
         document.body.classList.add('no-scroll');
         window.addEventListener('touchmove', preventRubberBand, { passive: false });
         
@@ -70,9 +74,8 @@ const ui = {
     },
 
     showStart() {
-        // A) Start Screen 顯示時一定要鎖捲動
-        document.body.classList.add('no-scroll');
-        window.addEventListener('touchmove', preventRubberBand, { passive: false });
+        document.body.classList.remove('no-scroll');
+        window.removeEventListener('touchmove', preventRubberBand);
         
         this.els.startScreen.classList.remove('hidden-force');
         this.els.gameScreen.classList.add('hidden-force');
@@ -123,7 +126,6 @@ const ui = {
     },
 
     showResult() {
-        // 進入結果畫面，移除鎖定
         document.body.classList.remove('no-scroll');
         window.removeEventListener('touchmove', preventRubberBand);
         
@@ -156,10 +158,10 @@ const game = {
            if (STATE.status !== 'START') this.resizeCanvas();
         });
 
-        // Event Bindings
-        ui.els.btnStart.onclick = () => this.startCountdown();
-        ui.els.btnShowRules.onclick = () => ui.showRules();
-        ui.els.btnRestart.onclick = () => this.restart();
+        // Event Listeners
+        ui.els.btnStartGame.onclick = () => this.startCountdown();
+        ui.els.btnRules.onclick = () => ui.showRules();
+        ui.els.btnRestartGame.onclick = () => this.restart();
         ui.els.btnShowResult.onclick = () => ui.showResult();
         ui.els.btnCloseResult.onclick = () => ui.closeResult();
         ui.els.btnPlayAgain.onclick = () => { this.startCountdown(); ui.closeResult(); };
@@ -209,7 +211,8 @@ const game = {
         const marginX = Math.max(36, CONFIG.pathWidth * 1.25);
         const marginY = Math.max(48, CONFIG.pathWidth * 1.5);
         
-        // B) 起點上移安全邊界：球半徑(13) + 多一點空間
+        // 【起點上移安全邊界修正】
+        // 額外加上球半徑 + 文字空間，避免起點在畫面最底端被裁切
         const safeBottom = CONFIG.ballRadius + 22; 
         
         const startX = marginX;
@@ -304,7 +307,7 @@ const game = {
         this.ctx.fillStyle = '#b45309';
         this.ctx.textAlign = 'center';
         
-        // B) 起點文字偏移調小，確保完整顯示
+        // 【文字偏移修正】調小偏移值，避免「起點」二字超出螢幕
         this.ctx.fillText('起點', start.x, start.y + 35); 
         this.ctx.beginPath();
         this.ctx.arc(start.x, start.y, 8, 0, Math.PI*2);
@@ -346,7 +349,6 @@ const game = {
 
     handleDragMove(e: PointerEvent) {
         if (STATE.status !== 'PLAYING' || !STATE.isDragging) return;
-        // e.preventDefault() is handled by the passive:false touchmove listener globally
         const deltaX = e.clientX - STATE.dragStartPos.x;
         const deltaY = e.clientY - STATE.dragStartPos.y;
         const newX = STATE.ballStartPos.x + deltaX;
