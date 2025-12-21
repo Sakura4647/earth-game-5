@@ -17,23 +17,21 @@
               sans: ['"Noto Sans TC"', 'sans-serif'],
             },
             colors: {
-              // 修改為土行色系：淺黃褐、卡其、土色
               wood: {
-                50: '#fdfcf5',  // 奶油白
-                100: '#f7f3e8', // 淺卡其
-                200: '#efe6d0', // 淺土黃
-                300: '#e5d3b0', // 土黃
-                400: '#d6ba8a', // 麥色
-                500: '#c29d66', // 主土色
-                600: '#a37e4d', // 深土色
-                700: '#85623d', // 褐色
-                800: '#6d4f35', // 深褐
-                900: '#59402f', // 焦褐
+                50: '#fdfcf5',
+                100: '#f7f3e8',
+                200: '#efe6d0',
+                300: '#e5d3b0',
+                400: '#d6ba8a',
+                500: '#c29d66',
+                600: '#a37e4d',
+                700: '#85623d',
+                800: '#6d4f35',
+                900: '#59402f',
               },
-              // 強調色：明亮的赭土色/磚紅色
               nature: {
                 light: '#fbf3db',
-                main: '#b45309', // 赭土色
+                main: '#b45309',
                 dark: '#8c3a00',
               }
             }
@@ -45,17 +43,17 @@
       body {
         font-family: 'Noto Sans TC', sans-serif;
         background-color: #fdfcf5;
+        margin: 0;
+        padding: 0;
       }
       
-      /* 只在倒數與遊戲中套用鎖捲動 */
       body.no-scroll {
         overflow: hidden; 
         height: 100vh;
-        height: 100svh; /* 支援新版瀏覽器 */
+        height: 100svh;
         overscroll-behavior: none;
       }
 
-      /* 土行紋理 */
       .wood-texture {
         background-color: #fdfcf5;
         background-image: radial-gradient(#d6ba8a 0.5px, transparent 0.5px), radial-gradient(#d6ba8a 0.5px, #fdfcf5 0.5px);
@@ -78,7 +76,6 @@
         100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(180, 83, 9, 0); }
       }
 
-      /* Player Group Styles */
       #player-group {
         position: absolute;
         z-index: 20;
@@ -133,19 +130,13 @@
 </script>
 </head>
 <body class="wood-texture text-wood-900 min-h-screen tracking-wide">
-
-    <!-- App Container -->
     <div id="app" class="relative min-h-screen flex flex-col">
-        
         <!-- 1. Start Screen -->
         <div id="screen-start" class="min-h-screen flex flex-col items-center justify-center p-4 z-50 relative pb-10">
             <div class="max-w-md w-full bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-xl border-2 border-wood-300 text-center fade-in my-4">
-                <!-- Shrink spacing for icon and title -->
                 <div class="mt-2 mb-2"><span class="text-5xl">⛰️</span></div>
                 <h1 class="text-3xl md:text-4xl font-black text-wood-900 mb-4 tracking-widest">土之穩行｜指尖走線</h1>
-
                 <div class="bg-wood-50 p-6 rounded-xl border border-wood-200 text-left mb-6">
-                    <!-- Prevent wrapping of the phrase -->
                     <p class="text-wood-700 mb-2 font-bold tracking-wider text-lg whitespace-nowrap">脾主肌肉，氣血充盈則動作靈巧。</p>
                     <p class="text-base text-wood-600 mb-4 leading-relaxed font-medium tracking-wide">
                         土行對應臟腑為脾與胃，與消化、肌肉穩定有關。
@@ -153,7 +144,6 @@
                     <h2 class="text-xl font-bold text-wood-800 mb-3 border-b border-wood-300 pb-2 flex items-center gap-2 tracking-wider">
                         <span>📜 遊戲規則</span>
                     </h2>
-                    <!-- Updated Rules -->
                     <ul class="space-y-3 text-wood-800 leading-relaxed text-base font-medium tracking-wide">
                         <li class="flex items-start gap-2">
                             <span class="font-bold text-nature-dark">①</span>
@@ -165,16 +155,14 @@
                         </li>
                     </ul>
                 </div>
-
-                <button onclick="game.startCountdown()" class="w-full font-bold rounded-lg transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center gap-2 bg-nature-main hover:bg-nature-dark text-white shadow-wood-300 px-8 py-3 text-2xl tracking-widest">
+                <button id="btn-start" class="w-full font-bold rounded-lg transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center gap-2 bg-nature-main hover:bg-nature-dark text-white shadow-wood-300 px-8 py-3 text-2xl tracking-widest">
                     開始遊戲
                 </button>
             </div>
         </div>
 
-        <!-- 2. Game Screen (Initially Hidden) -->
-        <div id="screen-game" class="hidden-force flex-1 flex flex-col h-screen">
-            <!-- Top Bar -->
+        <!-- 2. Game Screen -->
+        <div id="screen-game" class="hidden-force flex-1 flex flex-col h-screen overflow-hidden">
             <div class="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur shadow-md border-b border-wood-200 h-16 px-4">
                 <div class="max-w-6xl mx-auto h-full flex items-center justify-between">
                     <div class="flex items-center gap-2 w-1/3">
@@ -184,15 +172,14 @@
                         </div>
                     </div>
                     <div class="w-1/3"></div> 
-                    
                     <div class="flex items-center justify-end gap-2 w-2/3 md:w-1/3">
-                        <button onclick="ui.showRules()" class="font-bold rounded-lg transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center gap-2 border-2 border-wood-600 text-wood-800 hover:bg-wood-100 px-3 py-1 text-base tracking-wide">
+                        <button id="btn-show-rules" class="font-bold rounded-lg transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center gap-2 border-2 border-wood-600 text-wood-800 hover:bg-wood-100 px-3 py-1 text-base tracking-wide">
                             規則
                         </button>
-                        <button onclick="game.restart()" class="font-bold rounded-lg transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center gap-2 bg-wood-600 hover:bg-wood-700 text-white px-3 py-1 text-base tracking-wide">
+                        <button id="btn-restart" class="font-bold rounded-lg transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center gap-2 bg-wood-600 hover:bg-wood-700 text-white px-3 py-1 text-base tracking-wide">
                             重來
                         </button>
-                        <button id="btn-result" onclick="ui.showResult()" disabled class="font-bold rounded-lg transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center gap-2 bg-wood-600 hover:bg-wood-700 text-white px-3 py-1 text-base opacity-50 cursor-not-allowed tracking-wide">
+                        <button id="btn-result" disabled class="font-bold rounded-lg transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center gap-2 bg-wood-600 hover:bg-wood-700 text-white px-3 py-1 text-base opacity-50 cursor-not-allowed tracking-wide">
                             結果
                         </button>
                     </div>
@@ -221,7 +208,7 @@
         <!-- Result Modal -->
         <div id="modal-result" class="hidden-force fixed inset-0 z-50 flex items-center justify-center p-4 bg-wood-900/60 backdrop-blur-sm fade-in">
             <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden p-6 text-center relative max-h-[90vh] overflow-y-auto">
-                <button onclick="ui.closeResult()" class="absolute top-4 right-4 text-wood-400 hover:text-wood-700 transition-colors p-2 rounded-full hover:bg-wood-100">
+                <button id="btn-close-result" class="absolute top-4 right-4 text-wood-400 hover:text-wood-700 transition-colors p-2 rounded-full hover:bg-wood-100">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -243,7 +230,7 @@
                     </div>
                 </div>
                 <div class="flex flex-col gap-3">
-                    <button onclick="game.startCountdown(); ui.closeResult();" class="w-full font-bold rounded-lg transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center gap-2 bg-nature-main hover:bg-nature-dark text-white shadow-wood-300 px-6 py-2 text-lg tracking-widest">
+                    <button id="btn-play-again" class="w-full font-bold rounded-lg transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center gap-2 bg-nature-main hover:bg-nature-dark text-white shadow-wood-300 px-6 py-2 text-lg tracking-widest">
                         再來一次
                     </button>
                 </div>
@@ -253,7 +240,7 @@
         <!-- Rules Modal -->
         <div id="modal-rules" class="hidden-force fixed inset-0 z-50 flex items-center justify-center p-4 bg-wood-900/60 backdrop-blur-sm fade-in">
             <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden p-6 relative max-h-[90vh] overflow-y-auto">
-                <button onclick="ui.closeRules()" class="absolute top-4 right-4 text-wood-400 hover:text-wood-700 transition-colors p-2 rounded-full hover:bg-wood-100">
+                <button id="btn-close-rules" class="absolute top-4 right-4 text-wood-400 hover:text-wood-700 transition-colors p-2 rounded-full hover:bg-wood-100">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -266,431 +253,7 @@
                 </ul>
             </div>
         </div>
-
     </div>
-
-    <script>
-        const CONFIG = {
-            duration: 30,
-            pathWidth: 38,
-            ballRadius: 13, 
-            tolerance: 0.93,
-            startGraceTime: 300, 
-            collisionSlackPx: 1.5,
-        };
-
-        const STATE = {
-            status: 'START',
-            timeLeft: CONFIG.duration,
-            timerId: null,
-            progress: 0,
-            isDragging: false,
-            pathPoints: [], 
-            totalLength: 0,
-            dragStartPos: { x: 0, y: 0 },
-            ballStartPos: { x: 0, y: 0 }, 
-            dragStartTime: 0,
-            currentBallPos: { x: 0, y: 0 },
-        };
-
-        const preventRubberBand = (e) => {
-            // 僅在倒數與遊戲狀態防止彈性捲動
-            if (STATE.status === 'COUNTDOWN' || STATE.status === 'PLAYING') {
-                e.preventDefault();
-            }
-        };
-
-        const ui = {
-            els: {
-                startScreen: document.getElementById('screen-start'),
-                gameScreen: document.getElementById('screen-game'),
-                gameGrid: document.getElementById('game-grid'),
-                canvas: document.getElementById('game-canvas'),
-                playerGroup: document.getElementById('player-group'), 
-                playerBall: document.getElementById('player-ball'), 
-                playerHandle: document.getElementById('player-handle'),
-                startHint: document.getElementById('start-hint'),
-                timerDisplay: document.getElementById('timer-display'),
-                timerVal: document.getElementById('timer-val'),
-                btnResult: document.getElementById('btn-result'),
-                overlayCountdown: document.getElementById('overlay-countdown'),
-                countdownNum: document.getElementById('countdown-number'),
-                modalResult: document.getElementById('modal-result'),
-                modalRules: document.getElementById('modal-rules'),
-                resPercent: document.getElementById('res-percent'),
-                resMsg: document.getElementById('res-msg'),
-                resSubMsg: document.getElementById('res-submsg'),
-                resScore: document.getElementById('res-score'),
-            },
-
-            showGame() {
-                // 套用滾動鎖定與 iOS 防橡皮筋
-                document.body.classList.add('no-scroll');
-                window.addEventListener('touchmove', preventRubberBand, { passive: false });
-                
-                this.els.startScreen.classList.add('hidden-force');
-                this.els.gameScreen.classList.remove('hidden-force');
-                setTimeout(() => game.resizeCanvas(), 50);
-            },
-
-            showStart() {
-                // 移除滾動鎖定
-                document.body.classList.remove('no-scroll');
-                window.removeEventListener('touchmove', preventRubberBand, { passive: false });
-                
-                this.els.startScreen.classList.remove('hidden-force');
-                this.els.gameScreen.classList.add('hidden-force');
-            },
-
-            updateTimer(val) {
-                this.els.timerVal.textContent = val;
-                if (val <= 5) {
-                    this.els.timerDisplay.classList.add('text-red-600', 'animate-pulse');
-                    this.els.timerDisplay.classList.remove('text-wood-900');
-                } else {
-                    this.els.timerDisplay.classList.remove('text-red-600', 'animate-pulse');
-                    this.els.timerDisplay.classList.add('text-wood-900');
-                }
-            },
-
-            enableResultBtn(enabled) {
-                if (enabled) {
-                    this.els.btnResult.disabled = false;
-                    this.els.btnResult.classList.remove('opacity-50', 'cursor-not-allowed');
-                } else {
-                    this.els.btnResult.disabled = true;
-                    this.els.btnResult.classList.add('opacity-50', 'cursor-not-allowed');
-                }
-            },
-
-            updateBallPosition(cx, cy) {
-                this.els.playerGroup.style.left = `${cx - 13}px`;
-                this.els.playerGroup.style.top = `${cy - 13}px`;
-                this.els.playerGroup.classList.remove('hidden-force');
-                STATE.currentBallPos = { x: cx, y: cy };
-            },
-
-            showCountdown(cb) {
-                this.els.overlayCountdown.classList.remove('hidden-force');
-                let count = 3;
-                this.els.countdownNum.textContent = count;
-                const int = setInterval(() => {
-                    count--;
-                    if (count > 0) {
-                        this.els.countdownNum.textContent = count;
-                    } else {
-                        clearInterval(int);
-                        this.els.overlayCountdown.classList.add('hidden-force');
-                        cb();
-                    }
-                }, 1000);
-            },
-
-            showResult() {
-                // 進入結果畫面，移除鎖定
-                document.body.classList.remove('no-scroll');
-                window.removeEventListener('touchmove', preventRubberBand, { passive: false });
-                
-                const result = game.calculateResult();
-                this.els.resPercent.textContent = Math.round(STATE.progress);
-                this.els.resMsg.textContent = result.message;
-                this.els.resSubMsg.textContent = result.subMessage;
-                this.els.resScore.textContent = result.score;
-                this.els.modalResult.classList.remove('hidden-force');
-            },
-
-            closeResult() { this.els.modalResult.classList.add('hidden-force'); },
-            showRules() { this.els.modalRules.classList.remove('hidden-force'); },
-            closeRules() { this.els.modalRules.classList.add('hidden-force'); },
-            toggleHint(show) {
-                if(show) this.els.startHint.classList.remove('hidden-force');
-                else this.els.startHint.classList.add('hidden-force');
-            }
-        };
-
-        const game = {
-            ctx: null,
-            path2D: null,
-
-            init() {
-                STATE.status = 'START';
-                ui.showStart();
-                this.ctx = ui.els.canvas.getContext('2d');
-                window.addEventListener('resize', () => {
-                   if (STATE.status !== 'START') this.resizeCanvas();
-                });
-
-                const handle = ui.els.playerHandle;
-                handle.addEventListener('pointerdown', (e) => this.handleDragStart(e));
-                window.addEventListener('pointermove', (e) => this.handleDragMove(e));
-                window.addEventListener('pointerup', (e) => this.handleDragEnd(e));
-                window.addEventListener('pointercancel', (e) => this.handleDragEnd(e));
-            },
-
-            startCountdown() {
-                // 按下開始遊戲瞬間回頂，確保位置正確
-                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-                
-                ui.showGame();
-                ui.closeResult();
-                STATE.status = 'COUNTDOWN';
-                ui.enableResultBtn(false);
-                ui.updateTimer(CONFIG.duration);
-                ui.toggleHint(false);
-                this.resizeCanvas(); 
-                if(STATE.pathPoints.length > 0) {
-                    const start = STATE.pathPoints[0];
-                    ui.updateBallPosition(start.x, start.y);
-                }
-                ui.showCountdown(() => { this.startPlaying(); });
-            },
-
-            resizeCanvas() {
-                const container = ui.els.gameGrid;
-                ui.els.canvas.width = container.offsetWidth;
-                ui.els.canvas.height = container.offsetHeight;
-                this.generatePath();
-                this.draw();
-                if (STATE.pathPoints.length > 0 && !STATE.isDragging) {
-                     const start = STATE.pathPoints[0];
-                     ui.updateBallPosition(start.x, start.y);
-                }
-            },
-
-            generatePath() {
-                const w = ui.els.canvas.width;
-                const h = ui.els.canvas.height;
-                this.path2D = new Path2D();
-                STATE.pathPoints = [];
-                const marginX = Math.max(36, CONFIG.pathWidth * 1.25);
-                const marginY = Math.max(48, CONFIG.pathWidth * 1.5);
-                const startX = marginX;
-                const endX = w - marginX;
-                const yTopLimit = marginY;
-                const yBottomLimit = h - marginY;
-                const hPath = yBottomLimit - yTopLimit;
-                const minStepX = CONFIG.pathWidth * 2.35;
-                let columns = Math.floor((endX - startX) / minStepX) + 1;
-                columns = Math.min(8, Math.max(5, columns));
-                const stepX = (endX - startX) / (columns - 1);
-                const wiggleCol1 = Math.floor(columns / 2);
-                let wiggleCol2 = 1;
-                if (Math.abs(wiggleCol2 - wiggleCol1) < 2) wiggleCol2 = columns - 2;
-                const wiggleAmp = Math.min(stepX * 0.18, CONFIG.pathWidth * 0.55);
-                const wiggleAmp2 = wiggleAmp * 0.8;
-                const ranges = [[0.12, 0.20], [0.80, 0.90], [0.25, 0.38], [0.60, 0.75]];
-                const yTargets = [];
-                for (let i = 0; i < columns - 1; i++) {
-                    const range = ranges[i % ranges.length];
-                    const val = range[0] + Math.random() * (range[1] - range[0]);
-                    yTargets.push(val);
-                }
-                yTargets.push(0.0);
-                let rawPoints = [];
-                rawPoints.push({x: startX, y: yBottomLimit});
-                for (let i = 0; i < columns; i++) {
-                    const x = startX + i * stepX;
-                    const targetY = yTopLimit + yTargets[i] * hPath;
-                    const lastPoint = rawPoints[rawPoints.length - 1];
-                    const startY = (i === 0) ? yBottomLimit : lastPoint.y;
-                    if (i === wiggleCol1 || i === wiggleCol2) {
-                        const count = (i === wiggleCol1) ? 3 : 2;
-                        const stepY = (targetY - startY) / count;
-                        const currentAmp = (i === wiggleCol1) ? wiggleAmp : wiggleAmp2;
-                        for (let k = 1; k < count; k++) {
-                            const dir = (k % 2 === 1) ? 1 : -1;
-                            rawPoints.push({x: x + dir * currentAmp, y: startY + k * stepY});
-                        }
-                    }
-                    rawPoints.push({x: x, y: targetY});
-                    if (i < columns - 1) {
-                        const nextX = startX + (i + 1) * stepX;
-                        rawPoints.push({x: nextX, y: targetY});
-                    }
-                }
-                if (rawPoints.length > 0) {
-                    this.path2D.moveTo(rawPoints[0].x, rawPoints[0].y);
-                    STATE.pathPoints.push({x: rawPoints[0].x, y: rawPoints[0].y, len: 0});
-                    let cLen = 0;
-                    for (let i = 1; i < rawPoints.length; i++) {
-                        const p1 = rawPoints[i-1];
-                        const p2 = rawPoints[i];
-                        this.path2D.lineTo(p2.x, p2.y);
-                        const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-                        const steps = Math.max(1, Math.ceil(dist / 4)); 
-                        for (let s = 1; s <= steps; s++) {
-                            const t = s / steps;
-                            const px = p1.x + (p2.x - p1.x) * t;
-                            const py = p1.y + (p2.y - p1.y) * t;
-                            const segLen = dist / steps;
-                            cLen += segLen;
-                            STATE.pathPoints.push({x: px, y: py, len: cLen});
-                        }
-                    }
-                    STATE.totalLength = cLen;
-                }
-            },
-
-            draw() {
-                if (!this.ctx) return;
-                const w = ui.els.canvas.width;
-                const h = ui.els.canvas.height;
-                this.ctx.clearRect(0, 0, w, h);
-                this.ctx.lineCap = 'round';
-                this.ctx.lineJoin = 'round';
-                this.ctx.strokeStyle = '#a37e4d';
-                this.ctx.lineWidth = CONFIG.pathWidth;
-                this.ctx.stroke(this.path2D);
-                this.ctx.strokeStyle = '#e5d3b0';
-                this.ctx.lineWidth = CONFIG.pathWidth * CONFIG.tolerance;
-                this.ctx.stroke(this.path2D);
-                this.ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-                this.ctx.lineWidth = 1;
-                this.ctx.stroke(this.path2D);
-                const start = STATE.pathPoints[0];
-                const end = STATE.pathPoints[STATE.pathPoints.length-1];
-                this.ctx.font = 'bold 18px "Noto Sans TC"';
-                this.ctx.fillStyle = '#b45309';
-                this.ctx.textAlign = 'center';
-                this.ctx.fillText('起點', start.x, start.y + 45); 
-                this.ctx.beginPath();
-                this.ctx.arc(start.x, start.y, 8, 0, Math.PI*2);
-                this.ctx.fillStyle = '#166534'; 
-                this.ctx.fill();
-                this.ctx.fillStyle = '#b45309';
-                this.ctx.fillText('終點', end.x, end.y - 25);
-                this.ctx.beginPath();
-                this.ctx.arc(end.x, end.y, 10, 0, Math.PI * 2);
-                this.ctx.fillStyle = '#b45309';
-                this.ctx.fill();
-            },
-
-            startPlaying() {
-                STATE.status = 'PLAYING';
-                STATE.timeLeft = CONFIG.duration;
-                STATE.progress = 0;
-                STATE.isDragging = false;
-                ui.toggleHint(true);
-                if (STATE.timerId) clearInterval(STATE.timerId);
-                STATE.timerId = setInterval(() => {
-                    STATE.timeLeft--;
-                    ui.updateTimer(STATE.timeLeft);
-                    if (STATE.timeLeft <= 0) this.finishGame();
-                }, 1000);
-            },
-
-            handleDragStart(e) {
-                if (STATE.status !== 'PLAYING') return;
-                STATE.isDragging = true;
-                ui.toggleHint(false);
-                STATE.dragStartPos = { x: e.clientX, y: e.clientY };
-                STATE.ballStartPos = { ...STATE.currentBallPos };
-                STATE.dragStartTime = Date.now();
-                ui.els.playerGroup.style.cursor = 'grabbing';
-                ui.els.playerHandle.style.cursor = 'grabbing';
-            },
-
-            handleDragMove(e) {
-                if (STATE.status !== 'PLAYING' || !STATE.isDragging) return;
-                e.preventDefault(); 
-                const deltaX = e.clientX - STATE.dragStartPos.x;
-                const deltaY = e.clientY - STATE.dragStartPos.y;
-                const newX = STATE.ballStartPos.x + deltaX;
-                const newY = STATE.ballStartPos.y + deltaY;
-                const gridRect = ui.els.gameGrid.getBoundingClientRect();
-                if (newX < 0 || newX > gridRect.width || newY < 0 || newY > gridRect.height) { this.failGame(); return; }
-                ui.updateBallPosition(newX, newY);
-                const timeElapsed = Date.now() - STATE.dragStartTime;
-                if (timeElapsed < CONFIG.startGraceTime) { this.checkProgress(newX, newY); return; }
-                const collisionInfo = this.checkCollision(newX, newY);
-                if (collisionInfo.collided) this.failGame();
-                else this.updateProgressFromInfo(collisionInfo);
-            },
-
-            checkCollision(x, y) {
-                let minDist = Infinity;
-                let closestIdx = 0;
-                for(let i=0; i<STATE.pathPoints.length; i++) {
-                    const p = STATE.pathPoints[i];
-                    const d = (x - p.x)**2 + (y - p.y)**2;
-                    if (d < minDist) { minDist = d; closestIdx = i; }
-                }
-                const dist = Math.sqrt(minDist);
-                let collided = false;
-                this.ctx.save();
-                this.ctx.lineWidth = CONFIG.pathWidth * CONFIG.tolerance;
-                this.ctx.lineCap = 'round';
-                this.ctx.lineJoin = 'round';
-                const effectiveRadius = CONFIG.ballRadius - CONFIG.collisionSlackPx;
-                const samples = 16; 
-                const angleStep = (Math.PI * 2) / samples;
-                if (!this.ctx.isPointInStroke(this.path2D, x, y)) collided = true;
-                else {
-                    for (let i = 0; i < samples; i++) {
-                        const angle = i * angleStep;
-                        const sx = x + Math.cos(angle) * effectiveRadius;
-                        const sy = y + Math.sin(angle) * effectiveRadius;
-                        if (!this.ctx.isPointInStroke(this.path2D, sx, sy)) { collided = true; break; }
-                    }
-                }
-                this.ctx.restore();
-                return { collided, closestIdx, dist };
-            },
-
-            checkProgress(x, y) {
-                const info = this.checkCollision(x, y);
-                this.updateProgressFromInfo(info);
-            },
-            
-            updateProgressFromInfo(info) {
-                const currentLen = STATE.pathPoints[info.closestIdx].len;
-                const percent = (currentLen / STATE.totalLength) * 100;
-                if (percent > STATE.progress) STATE.progress = percent;
-                if (percent >= 98) { STATE.progress = 100; this.finishGame(); }
-            },
-
-            handleDragEnd(e) {
-                if (STATE.status === 'PLAYING') {
-                    STATE.isDragging = false;
-                    ui.els.playerGroup.style.cursor = 'grab';
-                    ui.els.playerHandle.style.cursor = 'grab';
-                }
-            },
-
-            failGame() {
-                STATE.status = 'FINISHED';
-                clearInterval(STATE.timerId);
-                ui.els.playerBall.classList.add('bg-red-600');
-                ui.els.playerBall.classList.remove('bg-nature-main');
-                setTimeout(() => {
-                    ui.els.playerBall.classList.remove('bg-red-600');
-                    ui.els.playerBall.classList.add('bg-nature-main');
-                    ui.enableResultBtn(true);
-                    ui.showResult();
-                }, 500);
-            },
-
-            finishGame() {
-                STATE.status = 'FINISHED';
-                clearInterval(STATE.timerId);
-                ui.enableResultBtn(true);
-                ui.showResult();
-            },
-
-            restart() {
-                clearInterval(STATE.timerId);
-                this.init();
-            },
-
-            calculateResult() {
-                const p = Math.round(STATE.progress);
-                if (p >= 70) return { score: 3, message: '脾胃強健，動作靈巧', subMessage: '手部肌肉非常穩定，表現亮眼。' };
-                else if (p >= 35) return { score: 2, message: '脾胃不錯，穩中帶進', subMessage: '穩定度不錯，下次就能走得更遠。' };
-                else return { score: 1, message: '脾胃警告，需多調養', subMessage: '深呼吸，下一次會更穩的。' };
-            }
-        };
-
-        game.init();
-    </script>
+    <script type="module" src="./index.tsx"></script>
 </body>
 </html>
