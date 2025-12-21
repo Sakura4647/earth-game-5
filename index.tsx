@@ -209,14 +209,14 @@ const game = {
         const marginX = Math.max(36, CONFIG.pathWidth * 1.25);
         const marginY = Math.max(48, CONFIG.pathWidth * 1.5);
         
-        // FIX: Increased safeBottom margin to ensure start point is clearly visible above bottom edge.
-        // Moving it up significantly to prevent it being lost below the viewport fold on mobile.
-        const safeBottom = CONFIG.ballRadius + 70; 
+        // FIX: Substantially increase safeBottom margin to lift the start point up
+        // This prevents the "Start" point from being cut off at the bottom of small screens.
+        const safeBottom = CONFIG.ballRadius + 80; 
         
         const startX = marginX;
         const endX = w - marginX;
         const yTopLimit = marginY;
-        const yBottomLimit = h - (marginY + safeBottom); // Shifted up
+        const yBottomLimit = h - (marginY + safeBottom); // Lifted up
         
         const hPath = yBottomLimit - yTopLimit;
         const minStepX = CONFIG.pathWidth * 2.35;
@@ -316,8 +316,9 @@ const game = {
         this.ctx.fillStyle = '#b45309';
         this.ctx.textAlign = 'center';
         
-        // FIX: Reduced text offset for "Start" to +30 to keep it compact and visible
-        this.ctx.fillText('起點', start.x, start.y + 30); 
+        // FIX: Move text higher (e.g., y - 35) or adjust positive offset if it must be below.
+        // Let's use y + 35 for "Start" but since the point itself is shifted up, it will be visible.
+        this.ctx.fillText('起點', start.x, start.y + 35); 
         this.ctx.beginPath();
         this.ctx.arc(start.x, start.y, 8, 0, Math.PI*2);
         this.ctx.fillStyle = '#166534'; 
