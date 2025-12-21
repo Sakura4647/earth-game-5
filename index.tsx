@@ -2,7 +2,6 @@
  * 土之穩行｜指尖走線 - 核心邏輯
  */
 
-// Added to resolve "Cannot redeclare block-scoped variable" errors by converting this file into a module
 export {};
 
 const CONFIG = {
@@ -26,10 +25,10 @@ const STATE = {
     ballStartPos: { x: 0, y: 0 }, 
     dragStartTime: 0,
     currentBallPos: { x: 0, y: 0 },
+    pathGenerated: false,
 };
 
 const preventRubberBand = (e: TouchEvent) => {
-    // Only block scrolling during gameplay/countdown to prevent browser pull-to-refresh
     if (STATE.status === 'COUNTDOWN' || STATE.status === 'PLAYING') {
         if (e.cancelable) e.preventDefault();
     }
@@ -57,7 +56,6 @@ const ui = {
         resSubMsg: document.getElementById('res-submsg')!,
         resScore: document.getElementById('res-score')!,
         
-        // Buttons
         btnStart: document.getElementById('btn-start')!,
         btnShowRules: document.getElementById('btn-show-rules')!,
         btnRestart: document.getElementById('btn-restart')!,
@@ -67,13 +65,10 @@ const ui = {
     },
 
     showGame() {
-        // Lock both body and html to prevent scrolling on all devices
         document.body.classList.add('no-scroll');
         document.documentElement.classList.add('no-scroll');
         window.scrollTo(0, 0);
-
         window.addEventListener('touchmove', preventRubberBand, { passive: false });
-        
         this.els.startScreen.classList.add('hidden-force');
         this.els.gameScreen.classList.remove('hidden-force');
         setTimeout(() => game.resizeCanvas(), 50);
@@ -83,7 +78,6 @@ const ui = {
         document.body.classList.remove('no-scroll');
         document.documentElement.classList.remove('no-scroll');
         window.removeEventListener('touchmove', preventRubberBand);
-        
         this.els.startScreen.classList.remove('hidden-force');
         this.els.gameScreen.classList.add('hidden-force');
     },
@@ -108,10 +102,6 @@ const ui = {
     },
 
     updateBallPosition(cx: number, cy: number) {
-        // Center the group containing ball and bottom vertical handle on the target cx, cy
-        // cx, cy is the intended center of the ball.
-        // Group contains ball (26x26) and vertical handle.
-        // flex-direction: column + align-items: center in CSS handles horizontal centering.
         this.els.playerGroup.style.left = `${cx - 13}px`;
         this.els.playerGroup.style.top = `${cy - 13}px`;
         this.els.playerGroup.classList.remove('hidden-force');
@@ -135,10 +125,6 @@ const ui = {
     },
 
     showResult() {
-        document.body.classList.remove('no-scroll');
-        document.documentElement.classList.remove('no-scroll');
-        window.removeEventListener('touchmove', preventRubberBand);
-        
         const result = game.calculateResult();
         this.els.resPercent.textContent = Math.round(STATE.progress).toString();
         this.els.resMsg.textContent = result.message;
@@ -168,12 +154,11 @@ const game = {
            if (STATE.status !== 'START') this.resizeCanvas();
         });
 
-        // Attach UI events
         ui.els.btnStart.onclick = () => this.startCountdown();
         ui.els.btnShowRules.onclick = () => ui.showRules();
         ui.els.btnRestart.onclick = () => this.restart();
         ui.els.btnCloseResult.onclick = () => ui.closeResult();
-        ui.els.btnPlayAgain.onclick = () => { this.startCountdown(); ui.closeResult(); };
+        ui.els.btnPlayAgain.onclick = () => { this.restart(); ui.closeResult(); };
         ui.els.btnCloseRules.onclick = () => ui.closeRules();
         ui.els.btnResult.onclick = () => ui.showResult();
 
@@ -185,7 +170,7 @@ const game = {
     },
 
     startCountdown() {
-        ui.showGame(); // Viewport reset and lock happens here
+        ui.showGame(); 
         ui.closeResult();
         STATE.status = 'COUNTDOWN';
         ui.enableResultBtn(false);
@@ -197,7 +182,6 @@ const game = {
             ui.updateBallPosition(start.x, start.y);
         }
         ui.showCountdown(() => { 
-            // Final force-reset of viewport just before starting game
             window.scrollTo(0, 0);
             this.startPlaying(); 
         });
@@ -207,7 +191,12 @@ const game = {
         const container = ui.els.gameGrid;
         ui.els.canvas.width = container.offsetWidth;
         ui.els.canvas.height = container.offsetHeight;
-        this.generatePath();
+        
+        if (!STATE.pathGenerated) {
+            this.generatePath();
+            STATE.pathGenerated = true;
+        }
+        
         this.draw();
         if (STATE.pathPoints.length > 0 && !STATE.isDragging) {
              const start = STATE.pathPoints[0];
@@ -221,18 +210,14 @@ const game = {
         this.path2D = new Path2D();
         STATE.pathPoints = [];
         
-        // Horizontal and Vertical Base Margins
         const marginX = Math.max(36, CONFIG.pathWidth * 1.25);
         const marginY = Math.max(48, CONFIG.pathWidth * 1.5);
-        
-        // FIX: Substantially increase safeBottom margin to lift the start point up
-        // This prevents the "Start" point from being cut off at the bottom of small screens.
         const safeBottom = CONFIG.ballRadius + 80; 
         
         const startX = marginX;
         const endX = w - marginX;
         const yTopLimit = marginY;
-        const yBottomLimit = h - (marginY + safeBottom); // Lifted up
+        const yBottomLimit = h - (marginY + safeBottom);
         
         const hPath = yBottomLimit - yTopLimit;
         const minStepX = CONFIG.pathWidth * 2.35;
@@ -240,7 +225,6 @@ const game = {
         columns = Math.min(8, Math.max(5, columns));
         const stepX = (endX - startX) / (columns - 1);
         
-        // Random zigzag path points
         const wiggleCol1 = Math.floor(columns / 2);
         let wiggleCol2 = 1;
         if (Math.abs(wiggleCol2 - wiggleCol1) < 2) wiggleCol2 = columns - 2;
@@ -253,7 +237,7 @@ const game = {
             const val = range[0] + Math.random() * (range[1] - range[0]);
             yTargets.push(val);
         }
-        yTargets.push(0.0); // End point top
+        yTargets.push(0.0);
 
         let rawPoints = [];
         rawPoints.push({x: startX, y: yBottomLimit});
@@ -308,19 +292,16 @@ const game = {
         const h = ui.els.canvas.height;
         this.ctx.clearRect(0, 0, w, h);
         
-        // Stroke Path Background
         this.ctx.lineCap = 'round';
         this.ctx.lineJoin = 'round';
         this.ctx.strokeStyle = '#a37e4d';
         this.ctx.lineWidth = CONFIG.pathWidth;
         this.ctx.stroke(this.path2D);
         
-        // Inner Path
         this.ctx.strokeStyle = '#e5d3b0';
         this.ctx.lineWidth = CONFIG.pathWidth * CONFIG.tolerance;
         this.ctx.stroke(this.path2D);
         
-        // Center Line
         this.ctx.strokeStyle = 'rgba(255,255,255,0.4)';
         this.ctx.lineWidth = 1;
         this.ctx.stroke(this.path2D);
@@ -332,8 +313,6 @@ const game = {
         this.ctx.fillStyle = '#b45309';
         this.ctx.textAlign = 'center';
         
-        // FIX: Move text higher (e.g., y - 35) or adjust positive offset if it must be below.
-        // Let's use y + 35 for "Start" but since the point itself is shifted up, it will be visible.
         this.ctx.fillText('起點', start.x, start.y + 35); 
         this.ctx.beginPath();
         this.ctx.arc(start.x, start.y, 8, 0, Math.PI*2);
@@ -381,13 +360,10 @@ const game = {
         const newY = STATE.ballStartPos.y + deltaY;
         const gridRect = ui.els.gameGrid.getBoundingClientRect();
         
-        // Clamp bounds
         if (newX < 0 || newX > gridRect.width || newY < 0 || newY > gridRect.height) { this.failGame(); return; }
         
         ui.updateBallPosition(newX, newY);
-        
         const timeElapsed = Date.now() - STATE.dragStartTime;
-        // Grace period for the very start of dragging
         if (timeElapsed < CONFIG.startGraceTime) { this.checkProgress(newX, newY); return; }
         
         const collisionInfo = this.checkCollision(newX, newY);
@@ -410,16 +386,13 @@ const game = {
         this.ctx.lineWidth = CONFIG.pathWidth * CONFIG.tolerance;
         this.ctx.lineCap = 'round';
         this.ctx.lineJoin = 'round';
-        
         const effectiveRadius = CONFIG.ballRadius - CONFIG.collisionSlackPx;
         const samples = 12; 
         const angleStep = (Math.PI * 2) / samples;
         
-        // Check center
         if (!this.ctx.isPointInStroke(this.path2D, x, y)) {
             collided = true;
         } else {
-            // Check edges of ball
             for (let i = 0; i < samples; i++) {
                 const angle = i * angleStep;
                 const sx = x + Math.cos(angle) * effectiveRadius;
@@ -471,7 +444,25 @@ const game = {
 
     restart() {
         clearInterval(STATE.timerId);
-        this.init();
+        STATE.timeLeft = CONFIG.duration;
+        STATE.progress = 0;
+        STATE.isDragging = false;
+        STATE.status = 'COUNTDOWN';
+        
+        ui.updateTimer(STATE.timeLeft);
+        ui.enableResultBtn(false);
+        ui.toggleHint(false);
+        ui.els.playerBall.classList.remove('bg-red-600');
+        
+        if(STATE.pathPoints.length > 0) {
+            const start = STATE.pathPoints[0];
+            ui.updateBallPosition(start.x, start.y);
+        }
+        
+        ui.showCountdown(() => { 
+            window.scrollTo(0, 0);
+            this.startPlaying(); 
+        });
     },
 
     calculateResult() {
