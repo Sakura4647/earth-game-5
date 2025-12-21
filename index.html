@@ -226,15 +226,44 @@
                         完成 <span id="res-percent" class="text-nature-main">0</span>% 路徑
                     </p>
                 </div>
+                
+                <!-- Result Card Container -->
                 <div class="bg-wood-50 p-4 rounded-xl border-2 border-wood-200 mb-4">
                     <h3 id="res-msg" class="text-2xl font-bold text-nature-main mb-2 tracking-wider"></h3>
                     <p id="res-submsg" class="text-wood-700 text-base mb-3 font-medium tracking-wide"></p>
+                    <!-- Score Box -->
                     <div class="flex justify-center items-center gap-1 text-wood-400 text-base font-bold bg-white py-2 rounded-lg border border-wood-100">
                         <span>得分：</span>
-                        <span id="res-score" class="text-3xl text-wood-800">0</span>
+                        <span id="res-score" class="text-3xl text-wood-800 font-bold">0</span>
                         <span>分</span>
                     </div>
                 </div>
+                
+                <!-- Scoring Method Section -->
+                <div class="text-left mb-6">
+                    <h4 class="text-base font-bold text-wood-700 mb-2 border-b border-wood-100 pb-1 tracking-wider">🏅 計分方式</h4>
+                    <div class="space-y-2 text-sm tracking-wide">
+                        <!-- Row 1 -->
+                        <div class="flex justify-between items-center whitespace-nowrap gap-2">
+                            <span class="text-nature-main font-bold">完成 ≥ 75% 路徑</span>
+                            <span class="text-wood-700 font-bold">3分</span>
+                            <span class="text-right flex-1 text-wood-500 overflow-hidden text-ellipsis">脾胃強健，動作靈巧</span>
+                        </div>
+                        <!-- Row 2 -->
+                        <div class="flex justify-between items-center whitespace-nowrap gap-2">
+                            <span class="text-nature-main font-bold">完成 ≥ 40% 路徑</span>
+                            <span class="text-wood-700 font-bold">2分</span>
+                            <span class="text-right flex-1 text-wood-500 overflow-hidden text-ellipsis">脾胃不錯，穩中有序</span>
+                        </div>
+                        <!-- Row 3 -->
+                        <div class="flex justify-between items-center whitespace-nowrap gap-2">
+                            <span class="text-nature-main font-bold">完成 < 40% 路徑</span>
+                            <span class="text-wood-700 font-bold">1分</span>
+                            <span class="text-right flex-1 text-wood-500 overflow-hidden text-ellipsis">脾胃警告，需多調養</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="flex flex-col gap-3">
                     <button id="btn-play-again" class="w-full font-bold rounded-lg transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center gap-2 bg-nature-main hover:bg-nature-dark text-white shadow-wood-300 px-6 py-2 text-lg tracking-widest">
                         再來一次

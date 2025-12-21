@@ -470,7 +470,7 @@ const game = {
     calculateResult() {
         const p = Math.round(STATE.progress);
         if (p >= 75) return { score: 3, message: '脾胃強健，動作靈巧', subMessage: '手部肌肉非常穩定，表現亮眼。' };
-        else if (p >= 40) return { score: 2, message: '脾胃不錯，穩中帶進', subMessage: '穩定度不錯，下次就能走得更遠。' };
+        else if (p >= 40) return { score: 2, message: '脾胃不錯，穩中有序', subMessage: '穩定度不錯，下次就能走得更遠。' };
         else return { score: 1, message: '脾胃警告，需多調養', subMessage: '深呼吸，讓肌肉放鬆，下一次會更穩的。' };
     }
 };
