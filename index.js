@@ -1,8 +1,8 @@
 /**
- * 土之穩行｜指尖走線 - 核心邏輯
+ * 土之穩行｜指尖走線 - 核心邏輯 (ESM JavaScript)
  */
 
-// Added to resolve "Cannot redeclare block-scoped variable" errors by converting this file into a module
+// Fixed "Cannot redeclare block-scoped variable" by converting this file into a module
 export {};
 
 const CONFIG = {
@@ -17,10 +17,10 @@ const CONFIG = {
 const STATE = {
     status: 'START',
     timeLeft: CONFIG.duration,
-    timerId: null as any,
+    timerId: null,
     progress: 0,
     isDragging: false,
-    pathPoints: [] as {x: number, y: number, len: number}[], 
+    pathPoints: [], 
     totalLength: 0,
     dragStartPos: { x: 0, y: 0 },
     ballStartPos: { x: 0, y: 0 }, 
@@ -28,7 +28,7 @@ const STATE = {
     currentBallPos: { x: 0, y: 0 },
 };
 
-const preventRubberBand = (e: TouchEvent) => {
+const preventRubberBand = (e) => {
     // Only block scrolling during gameplay/countdown to prevent browser pull-to-refresh
     if (STATE.status === 'COUNTDOWN' || STATE.status === 'PLAYING') {
         if (e.cancelable) e.preventDefault();
@@ -37,33 +37,33 @@ const preventRubberBand = (e: TouchEvent) => {
 
 const ui = {
     els: {
-        startScreen: document.getElementById('screen-start')!,
-        gameScreen: document.getElementById('screen-game')!,
-        gameGrid: document.getElementById('game-grid')!,
-        canvas: document.getElementById('game-canvas') as HTMLCanvasElement,
-        playerGroup: document.getElementById('player-group')!, 
-        playerBall: document.getElementById('player-ball')!, 
-        playerHandle: document.getElementById('player-handle')!,
-        startHint: document.getElementById('start-hint')!,
-        timerDisplay: document.getElementById('timer-display')!,
-        timerVal: document.getElementById('timer-val')!,
-        btnResult: document.getElementById('btn-result') as HTMLButtonElement,
-        overlayCountdown: document.getElementById('overlay-countdown')!,
-        countdownNum: document.getElementById('countdown-number')!,
-        modalResult: document.getElementById('modal-result')!,
-        modalRules: document.getElementById('modal-rules')!,
-        resPercent: document.getElementById('res-percent')!,
-        resMsg: document.getElementById('res-msg')!,
-        resSubMsg: document.getElementById('res-submsg')!,
-        resScore: document.getElementById('res-score')!,
+        startScreen: document.getElementById('screen-start'),
+        gameScreen: document.getElementById('screen-game'),
+        gameGrid: document.getElementById('game-grid'),
+        canvas: document.getElementById('game-canvas'),
+        playerGroup: document.getElementById('player-group'), 
+        playerBall: document.getElementById('player-ball'), 
+        playerHandle: document.getElementById('player-handle'),
+        startHint: document.getElementById('start-hint'),
+        timerDisplay: document.getElementById('timer-display'),
+        timerVal: document.getElementById('timer-val'),
+        btnResult: document.getElementById('btn-result'),
+        overlayCountdown: document.getElementById('overlay-countdown'),
+        countdownNum: document.getElementById('countdown-number'),
+        modalResult: document.getElementById('modal-result'),
+        modalRules: document.getElementById('modal-rules'),
+        resPercent: document.getElementById('res-percent'),
+        resMsg: document.getElementById('res-msg'),
+        resSubMsg: document.getElementById('res-submsg'),
+        resScore: document.getElementById('res-score'),
         
         // Buttons
-        btnStart: document.getElementById('btn-start')!,
-        btnShowRules: document.getElementById('btn-show-rules')!,
-        btnRestart: document.getElementById('btn-restart')!,
-        btnCloseResult: document.getElementById('btn-close-result')!,
-        btnPlayAgain: document.getElementById('btn-play-again')!,
-        btnCloseRules: document.getElementById('btn-close-rules')!,
+        btnStart: document.getElementById('btn-start'),
+        btnShowRules: document.getElementById('btn-show-rules'),
+        btnRestart: document.getElementById('btn-restart'),
+        btnCloseResult: document.getElementById('btn-close-result'),
+        btnPlayAgain: document.getElementById('btn-play-again'),
+        btnCloseRules: document.getElementById('btn-close-rules'),
     },
 
     showGame() {
@@ -83,7 +83,7 @@ const ui = {
         this.els.gameScreen.classList.add('hidden-force');
     },
 
-    updateTimer(val: number) {
+    updateTimer(val) {
         this.els.timerVal.textContent = val.toString();
         if (val <= 5) {
             this.els.timerDisplay.classList.add('text-red-600', 'animate-pulse');
@@ -92,7 +92,7 @@ const ui = {
         }
     },
 
-    enableResultBtn(enabled: boolean) {
+    enableResultBtn(enabled) {
         if (enabled) {
             this.els.btnResult.disabled = false;
             this.els.btnResult.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -102,14 +102,14 @@ const ui = {
         }
     },
 
-    updateBallPosition(cx: number, cy: number) {
+    updateBallPosition(cx, cy) {
         this.els.playerGroup.style.left = `${cx - 13}px`;
         this.els.playerGroup.style.top = `${cy - 13}px`;
         this.els.playerGroup.classList.remove('hidden-force');
         STATE.currentBallPos = { x: cx, y: cy };
     },
 
-    showCountdown(cb: () => void) {
+    showCountdown(cb) {
         this.els.overlayCountdown.classList.remove('hidden-force');
         let count = 3;
         this.els.countdownNum.textContent = count.toString();
@@ -140,15 +140,15 @@ const ui = {
     closeResult() { this.els.modalResult.classList.add('hidden-force'); },
     showRules() { this.els.modalRules.classList.remove('hidden-force'); },
     closeRules() { this.els.modalRules.classList.add('hidden-force'); },
-    toggleHint(show: boolean) {
+    toggleHint(show) {
         if(show) this.els.startHint.classList.remove('hidden-force');
         else this.els.startHint.classList.add('hidden-force');
     }
 };
 
 const game = {
-    ctx: null as CanvasRenderingContext2D | null,
-    path2D: null as Path2D | null,
+    ctx: null,
+    path2D: null,
 
     init() {
         STATE.status = 'START';
@@ -212,8 +212,6 @@ const game = {
         const marginX = Math.max(36, CONFIG.pathWidth * 1.25);
         const marginY = Math.max(48, CONFIG.pathWidth * 1.5);
         
-        // FIX: Substantially increase safeBottom margin to lift the start point up
-        // This prevents the "Start" point from being cut off at the bottom of small screens.
         const safeBottom = CONFIG.ballRadius + 80; 
         
         const startX = marginX;
@@ -319,9 +317,7 @@ const game = {
         this.ctx.fillStyle = '#b45309';
         this.ctx.textAlign = 'center';
         
-        // FIX: Move text higher (e.g., y - 35) or adjust positive offset if it must be below.
-        // Let's use y + 35 for "Start" but since the point itself is shifted up, it will be visible.
-        this.ctx.fillText('起點', start.x, start.y + 35); 
+        this.ctx.fillText('起點', start.x, start.y + 30); 
         this.ctx.beginPath();
         this.ctx.arc(start.x, start.y, 8, 0, Math.PI*2);
         this.ctx.fillStyle = '#166534'; 
@@ -349,7 +345,7 @@ const game = {
         }, 1000);
     },
 
-    handleDragStart(e: PointerEvent) {
+    handleDragStart(e) {
         if (STATE.status !== 'PLAYING') return;
         STATE.isDragging = true;
         ui.toggleHint(false);
@@ -360,7 +356,7 @@ const game = {
         ui.els.playerHandle.style.cursor = 'grabbing';
     },
 
-    handleDragMove(e: PointerEvent) {
+    handleDragMove(e) {
         if (STATE.status !== 'PLAYING' || !STATE.isDragging) return;
         const deltaX = e.clientX - STATE.dragStartPos.x;
         const deltaY = e.clientY - STATE.dragStartPos.y;
@@ -374,7 +370,6 @@ const game = {
         ui.updateBallPosition(newX, newY);
         
         const timeElapsed = Date.now() - STATE.dragStartTime;
-        // Grace period for the very start of dragging
         if (timeElapsed < CONFIG.startGraceTime) { this.checkProgress(newX, newY); return; }
         
         const collisionInfo = this.checkCollision(newX, newY);
@@ -382,7 +377,7 @@ const game = {
         else this.updateProgressFromInfo(collisionInfo);
     },
 
-    checkCollision(x: number, y: number) {
+    checkCollision(x, y) {
         if (!this.ctx || !this.path2D) return { collided: true, closestIdx: 0, dist: 0 };
         let minDist = Infinity;
         let closestIdx = 0;
@@ -402,11 +397,9 @@ const game = {
         const samples = 12; 
         const angleStep = (Math.PI * 2) / samples;
         
-        // Check center
         if (!this.ctx.isPointInStroke(this.path2D, x, y)) {
             collided = true;
         } else {
-            // Check edges of ball
             for (let i = 0; i < samples; i++) {
                 const angle = i * angleStep;
                 const sx = x + Math.cos(angle) * effectiveRadius;
@@ -418,19 +411,19 @@ const game = {
         return { collided, closestIdx, dist: Math.sqrt(minDist) };
     },
 
-    checkProgress(x: number, y: number) {
+    checkProgress(x, y) {
         const info = this.checkCollision(x, y);
         this.updateProgressFromInfo(info);
     },
     
-    updateProgressFromInfo(info: { collided: boolean, closestIdx: number, dist: number }) {
+    updateProgressFromInfo(info) {
         const currentLen = STATE.pathPoints[info.closestIdx].len;
         const percent = (currentLen / STATE.totalLength) * 100;
         if (percent > STATE.progress) STATE.progress = percent;
         if (percent >= 98.5) { STATE.progress = 100; this.finishGame(); }
     },
 
-    handleDragEnd(e: PointerEvent) {
+    handleDragEnd(e) {
         if (STATE.status === 'PLAYING') {
             STATE.isDragging = false;
             ui.els.playerGroup.style.cursor = 'grab';
