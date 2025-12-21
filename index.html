@@ -47,10 +47,12 @@
         background-color: #fdfcf5;
       }
       
-      /* Only lock scroll during gameplay */
+      /* Only lock scroll during start screen */
       body.no-scroll {
         overflow: hidden; 
-        touch-action: none;
+        height: 100vh;
+        height: 100svh;
+        overscroll-behavior: none;
       }
 
       /* 土行紋理 */
@@ -221,7 +223,7 @@
             <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden p-6 text-center relative max-h-[90vh] overflow-y-auto">
                 <button onclick="ui.closeResult()" class="absolute top-4 right-4 text-wood-400 hover:text-wood-700 transition-colors p-2 rounded-full hover:bg-wood-100">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" ="" />
                     </svg>
                 </button>
                 <div class="text-7xl mb-4">⛰️</div>
@@ -291,6 +293,13 @@
             currentBallPos: { x: 0, y: 0 },
         };
 
+        const preventRubberBand = (e) => {
+            // Only prevent scrolling on the start screen
+            if (STATE.status === 'START' || STATE.status === 'COUNTDOWN') {
+                e.preventDefault();
+            }
+        };
+
         const ui = {
             els: {
                 startScreen: document.getElementById('screen-start'),
@@ -317,12 +326,16 @@
             showGame() {
                 this.els.startScreen.classList.add('hidden-force');
                 this.els.gameScreen.classList.remove('hidden-force');
+                document.body.classList.remove('no-scroll');
+                window.removeEventListener('touchmove', preventRubberBand, { passive: false });
                 setTimeout(() => game.resizeCanvas(), 50);
             },
 
             showStart() {
                 this.els.startScreen.classList.remove('hidden-force');
                 this.els.gameScreen.classList.add('hidden-force');
+                document.body.classList.add('no-scroll');
+                window.addEventListener('touchmove', preventRubberBand, { passive: false });
             },
 
             updateTimer(val) {
